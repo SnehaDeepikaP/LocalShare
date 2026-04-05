@@ -1,4 +1,4 @@
-# LocalShare – SQLite Version
+# LocalShare – Community Help Board Web App
 
 Community help platform using **SQLite** for storage.
 No MySQL or any external DB server needed — SQLite is built into Python.
