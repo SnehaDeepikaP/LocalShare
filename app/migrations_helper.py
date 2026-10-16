@@ -26,6 +26,13 @@ def upgrade_existing_sqlite_database(db_path):
     if 'is_suspended' not in cols:
         cur.execute("ALTER TABLE users ADD COLUMN is_suspended BOOLEAN DEFAULT 0")
 
+    if 'google_id' not in cols:
+        cur.execute("ALTER TABLE users ADD COLUMN google_id TEXT DEFAULT NULL")
+    if 'avatar_url' not in cols:
+        cur.execute("ALTER TABLE users ADD COLUMN avatar_url TEXT DEFAULT NULL")
+    if 'bio' not in cols:
+        cur.execute("ALTER TABLE users ADD COLUMN bio TEXT DEFAULT NULL")
+
     # Hash any plaintext passwords
     cur.execute("SELECT id, password FROM users")
     users = cur.fetchall()
@@ -48,6 +55,12 @@ def upgrade_existing_sqlite_database(db_path):
     post_cols = [row[1] for row in cur.fetchall()]
     if 'updated_at' not in post_cols:
         cur.execute("ALTER TABLE posts ADD COLUMN updated_at TEXT DEFAULT NULL")
+    if 'urgency' not in post_cols:
+        cur.execute("ALTER TABLE posts ADD COLUMN urgency TEXT DEFAULT 'normal'")
+    if 'condition' not in post_cols:
+        cur.execute("ALTER TABLE posts ADD COLUMN condition TEXT DEFAULT NULL")
+    if 'intent' not in post_cols:
+        cur.execute("ALTER TABLE posts ADD COLUMN intent TEXT DEFAULT 'giveaway'")
 
     # Create new tables if not exist
     cur.execute('''
@@ -93,6 +106,61 @@ def upgrade_existing_sqlite_database(db_path):
             details     TEXT,
             created_at  TEXT DEFAULT (datetime('now','localtime')),
             FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE SET NULL
+        )
+    ''')
+
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS saved_listings (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id    INTEGER NOT NULL,
+            post_id    INTEGER NOT NULL,
+            created_at TEXT DEFAULT (datetime('now','localtime')),
+            UNIQUE(user_id, post_id),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+        )
+    ''')
+
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS exchange_messages (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            exchange_id INTEGER NOT NULL,
+            sender_id   INTEGER NOT NULL,
+            content     TEXT    NOT NULL,
+            is_read     BOOLEAN DEFAULT 0,
+            created_at  TEXT    DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (exchange_id) REFERENCES exchange_requests(id) ON DELETE CASCADE,
+            FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS exchange_reviews (
+            id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+            exchange_id          INTEGER NOT NULL,
+            reviewer_id          INTEGER NOT NULL,
+            reviewee_id          INTEGER NOT NULL,
+            rating               INTEGER NOT NULL,
+            comment              TEXT,
+            was_reused_or_repaired BOOLEAN DEFAULT 0,
+            created_at           TEXT DEFAULT (datetime('now','localtime')),
+            UNIQUE(exchange_id, reviewer_id),
+            FOREIGN KEY (exchange_id) REFERENCES exchange_requests(id) ON DELETE CASCADE,
+            FOREIGN KEY (reviewer_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (reviewee_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS notifications (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id    INTEGER NOT NULL,
+            title      TEXT    NOT NULL,
+            message    TEXT    NOT NULL,
+            link       TEXT,
+            is_read    BOOLEAN DEFAULT 0,
+            created_at TEXT    DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
     ''')
 

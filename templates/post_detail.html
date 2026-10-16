@@ -1,209 +1,246 @@
 {% extends "base.html" %}
+
 {% block title %}{{ post.title }} — LocalShare{% endblock %}
 
 {% block content %}
-<section class="py-5">
-  <div class="container">
-    <nav aria-label="breadcrumb" class="mb-4">
-      <ol class="breadcrumb small">
-        <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Home</a></li>
-        <li class="breadcrumb-item"><a href="{{ url_for('posts.posts') }}">Browse</a></li>
-        <li class="breadcrumb-item active" aria-current="page">{{ post.title[:30] }}...</li>
-      </ol>
-    </nav>
+<div class="container py-4">
+  <!-- Breadcrumb Navigation -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Home</a></li>
+      <li class="breadcrumb-item"><a href="{{ url_for('posts.posts') }}">Listings</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ post.title[:35] }}...</li>
+    </ol>
+  </nav>
 
-    <div class="row g-4">
-      <!-- Main Post Column -->
-      <div class="col-lg-8">
-        <div class="card border-0 shadow-sm p-4 mb-4">
-          <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
-            <div>
-              <span class="badge {{ 'badge-offer' if post.post_type == 'offer' else 'badge-request' }} fs-6">
-                <i class="bi {{ 'bi-gift-fill' if post.post_type == 'offer' else 'bi-hand-index-fill' }} me-1"></i>
-                {{ post.post_type | capitalize }}
+  <div class="row g-4">
+    <!-- Left Column: Listing Details & Handshake Action -->
+    <div class="col-lg-8">
+      <div class="card card-modern p-4 mb-4">
+        <!-- Top Status & Type Badges -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <span class="{% if post.post_type == 'offer' %}badge-offer{% else %}badge-request{% endif %} fs-6">
+              <i class="bi {% if post.post_type == 'offer' %}bi-gift-fill{% else %}bi-hand-index-thumb-fill{% endif %} me-1"></i>
+              {{ post.post_type | upper }}
+            </span>
+            {% if post.urgency and post.urgency in ['urgent', 'high'] %}
+              <span class="badge-urgent text-uppercase">
+                <i class="bi bi-fire me-1"></i>{{ post.urgency }} Priority
               </span>
-              <span class="badge bg-light text-dark border fs-6 ms-1">{{ post.category }}</span>
-            </div>
-            <div>
-              {% if post.status == 'open' %}
-                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">Status: Open</span>
-              {% elif post.status == 'in_progress' %}
-                <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 rounded-pill">Status: In Progress</span>
-              {% elif post.status == 'completed' %}
-                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill">Status: Completed</span>
-              {% else %}
-                <span class="badge bg-secondary-subtle text-secondary border px-3 py-2 rounded-pill">Status: Closed</span>
-              {% endif %}
-            </div>
+            {% endif %}
+            <span class="badge bg-light text-dark border"><i class="bi bi-folder2-open me-1"></i>{{ post.category }}</span>
+            {% if post.condition %}
+              <span class="badge-condition"><i class="bi bi-stars me-1"></i>Condition: {{ post.condition }}</span>
+            {% endif %}
           </div>
 
-          <h2 class="fw-bold mb-3 text-dark">{{ post.title }}</h2>
-
-          <div class="d-flex gap-3 text-muted small border-bottom pb-3 mb-4 flex-wrap">
-            <span><i class="bi bi-person me-1"></i>Posted by <strong>{{ post.user_name }}</strong></span>
-            <span><i class="bi bi-geo-alt text-primary me-1"></i>Area: <strong>{{ post.location }}</strong></span>
-            <span><i class="bi bi-calendar3 me-1"></i>Published: {{ post.created_at.strftime('%B %d, %Y') if post.created_at else '' }}</span>
-          </div>
-
-          <div class="mb-4">
-            <h5 class="fw-semibold text-dark">Details &amp; Requirements</h5>
-            <p class="text-secondary leading-relaxed fs-6" style="white-space: pre-line;">
-              {{ post.description }}
-            </p>
-          </div>
-
-          <!-- Post Management Controls (Author or Admin Only) -->
-          {% if session.get('user_id') == post.user_id or session.get('role') == 'admin' %}
-            <div class="card bg-light border-0 p-3 mt-4">
-              <h6 class="fw-bold mb-2"><i class="bi bi-gear-fill me-1 text-primary"></i>Manage Your Post</h6>
-              <div class="d-flex gap-2 flex-wrap">
-                <a href="{{ url_for('posts.edit_post', post_id=post.id) }}" class="btn btn-outline-primary btn-sm">
-                  <i class="bi bi-pencil me-1"></i>Edit Details
-                </a>
-                
-                {% if post.status != 'completed' %}
-                  <form method="POST" action="{{ url_for('posts.update_status', post_id=post.id) }}" class="d-inline">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <input type="hidden" name="status" value="completed"/>
-                    <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Mark this exchange as successfully completed?');">
-                      <i class="bi bi-check-circle me-1"></i>Mark Completed
-                    </button>
-                  </form>
-                {% endif %}
-
-                {% if post.status == 'open' %}
-                  <form method="POST" action="{{ url_for('posts.update_status', post_id=post.id) }}" class="d-inline">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <input type="hidden" name="status" value="closed"/>
-                    <button type="submit" class="btn btn-outline-secondary btn-sm" onclick="return confirm('Close this post from accepting new requests?');">
-                      <i class="bi bi-lock me-1"></i>Close Post
-                    </button>
-                  </form>
-                {% else %}
-                  <form method="POST" action="{{ url_for('posts.update_status', post_id=post.id) }}" class="d-inline">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <input type="hidden" name="status" value="open"/>
-                    <button type="submit" class="btn btn-outline-success btn-sm">
-                      <i class="bi bi-unlock me-1"></i>Reopen Post
-                    </button>
-                  </form>
-                {% endif %}
-
-                <form method="POST" action="{{ url_for('posts.delete_post', post_id=post.id) }}" class="d-inline ms-auto">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                  <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Permanently delete this post? This cannot be undone.');">
-                    <i class="bi bi-trash me-1"></i>Delete Post
-                  </button>
-                </form>
-              </div>
-            </div>
-          {% endif %}
-
-          <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
-            <a href="{{ url_for('posts.posts') }}" class="btn btn-link text-decoration-none px-0">
-              <i class="bi bi-arrow-left me-1"></i>Back to Browse
-            </a>
-            {% if session.get('user_id') and session.get('user_id') != post.user_id %}
-              <a href="{{ url_for('main.report_post', post_id=post.id) }}" class="text-danger small text-decoration-none">
-                <i class="bi bi-flag me-1"></i>Report Post
-              </a>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge {% if post.status == 'open' %}bg-success{% elif post.status == 'in_progress' %}bg-warning text-dark{% elif post.status == 'completed' %}bg-primary{% else %}bg-secondary{% endif %} px-2 py-1">
+              {{ post.status | replace('_', ' ') | capitalize }}
+            </span>
+            <!-- Bookmark Button -->
+            {% if session.get('user_id') %}
+            <form action="{{ url_for('posts.toggle_save_post', post_id=post.id) }}" method="POST" class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn-bookmark {% if is_saved %}saved{% endif %}" title="{% if is_saved %}Remove from Saved{% else %}Save to Watchlist{% endif %}">
+                <i class="bi {% if is_saved %}bi-bookmark-fill text-warning{% else %}bi-bookmark{% endif %} fs-5"></i>
+              </button>
+            </form>
             {% endif %}
           </div>
         </div>
-      </div>
 
-      <!-- Action & Coordination Column -->
-      <div class="col-lg-4">
-        <!-- Exchange Action Box -->
-        <div class="card border-0 shadow-sm p-4 mb-4">
-          <h5 class="fw-bold mb-3"><i class="bi bi-handshake me-2 text-primary"></i>Connect &amp; Exchange</h5>
-          
-          {% if not session.get('user_id') %}
-            <div class="text-center py-3">
-              <p class="text-muted small mb-3">Log in or create a free account to express interest in this resource.</p>
-              <a href="{{ url_for('auth.login', next=request.path) }}" class="btn btn-primary btn-sm w-100 mb-2">Log In</a>
-              <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary btn-sm w-100">Register</a>
-            </div>
-          {% elif session.get('user_id') == post.user_id %}
-            <div class="alert alert-info small mb-0">
-              <i class="bi bi-info-circle me-1"></i>You are the author of this post. Check incoming interest in your <a href="{{ url_for('main.dashboard') }}" class="fw-semibold">Dashboard</a>.
-            </div>
-          {% elif existing_request %}
-            <div class="card bg-light border-0 p-3">
-              <h6 class="fw-bold mb-1">Your Request Status:</h6>
-              <span class="badge {{ 'bg-success' if existing_request.status == 'accepted' else 'bg-warning text-dark' if existing_request.status == 'pending' else 'bg-secondary' }} mb-2">
-                {{ existing_request.status | capitalize }}
-              </span>
-              <p class="small text-muted mb-2"><strong>Your Note:</strong> {{ existing_request.message }}</p>
-              {% if existing_request.response_note %}
-                <p class="small text-dark mb-0"><strong>Author Response:</strong> {{ existing_request.response_note }}</p>
-              {% endif %}
-              <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-primary btn-sm mt-3 w-100">
-                View in Dashboard
-              </a>
-            </div>
-          {% elif post.status != 'open' %}
-            <div class="alert alert-secondary small mb-0">
-              <i class="bi bi-lock me-1"></i>This post is currently <strong>{{ post.status }}</strong> and not accepting new interest requests.
-            </div>
-          {% else %}
-            <!-- Submit Interest Request Form -->
-            <form method="POST" action="{{ url_for('exchange.create_request', post_id=post.id) }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-              <div class="mb-3">
-                <label class="form-label small fw-semibold" for="reqMessage">Your Note to {{ post.user_name }}</label>
-                <textarea class="form-control form-control-sm" id="reqMessage" name="message" rows="3"
-                          placeholder="Explain why you're interested and how/when you can coordinate..." required></textarea>
-                <div class="form-text small">Explain your request respectfully and clearly.</div>
-              </div>
+        <!-- Post Title -->
+        <h1 class="h2 fw-bold text-dark mb-3">{{ post.title }}</h1>
 
-              <div class="mb-3">
-                <label class="form-label small fw-semibold" for="reqContact">Contact / Coordination Info (Optional)</label>
-                <input type="text" class="form-control form-control-sm" id="reqContact" name="contact_info"
-                       placeholder="e.g. Phone, WhatsApp, or preferred meeting spot"/>
-                <div class="form-text small">Only shared if the post owner accepts your request.</div>
-              </div>
-
-              <button type="submit" class="btn btn-accent w-100 py-2 fw-semibold shadow-sm">
-                <i class="bi bi-send me-1"></i>Send Interest Request
-              </button>
-            </form>
-          {% endif %}
+        <!-- Neighborhood Location Privacy Shield -->
+        <div class="alert alert-light border d-flex align-items-center gap-2 py-2 px-3 mb-4 rounded-3 text-muted small">
+          <i class="bi bi-shield-check text-success fs-5"></i>
+          <div>
+            <strong>Area: {{ post.location }}</strong> &bull; Approximate neighborhood area. Exact address is never shown publicly to protect member privacy.
+          </div>
         </div>
 
-        <!-- Smart Recommended Matches -->
-        {% if recommended_matches %}
-          <div class="card border-0 shadow-sm p-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <h6 class="fw-bold mb-0 text-dark">
-                <i class="bi bi-stars text-warning me-1"></i>Smart Recommendations
-              </h6>
-              <a href="{{ url_for('matching.post_matches', post_id=post.id) }}" class="small text-decoration-none">View All</a>
-            </div>
-            <p class="small text-muted mb-3">Related complementary posts based on category and proximity</p>
-
-            <div class="list-group list-group-flush">
-              {% for match in recommended_matches %}
-                <a href="{{ url_for('posts.post_detail', post_id=match.post.id) }}" class="list-group-item list-group-item-action px-2 py-2 border-0 rounded mb-1 bg-light">
-                  <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span class="badge {{ 'badge-offer' if match.post.post_type == 'offer' else 'badge-request' }} small">
-                      {{ match.post.post_type | capitalize }}
-                    </span>
-                    <span class="badge bg-primary text-white" style="font-size: 0.75rem;">
-                      {{ match.score }}% Match
-                    </span>
-                  </div>
-                  <div class="fw-semibold small text-dark text-truncate">{{ match.post.title }}</div>
-                  <div class="text-muted" style="font-size: 0.75rem;">
-                    <i class="bi bi-geo-alt me-1"></i>{{ match.post.location }} &middot; {{ match.post.category }}
-                  </div>
-                </a>
-              {% endfor %}
-            </div>
+        <!-- Description Body -->
+        <div class="mb-4">
+          <h6 class="fw-bold text-uppercase text-muted small letter-spacing-1 mb-2">Description &amp; Details</h6>
+          <div class="p-3 bg-light rounded-3 text-secondary" style="white-space: pre-line; line-height: 1.7;">
+            {{ post.description }}
           </div>
+        </div>
+
+        <!-- Post Actions -->
+        {% if session.get('user_id') == post.user_id or session.get('role') == 'admin' %}
+        <!-- Author Controls -->
+        <div class="p-3 border rounded-3 bg-light">
+          <h6 class="fw-bold mb-2"><i class="bi bi-gear me-1"></i>Manage Your Listing</h6>
+          <div class="d-flex flex-wrap gap-2">
+            <a href="{{ url_for('posts.edit_post', post_id=post.id) }}" class="btn btn-outline-primary btn-sm">
+              <i class="bi bi-pencil me-1"></i>Edit Details
+            </a>
+            <form action="{{ url_for('posts.update_status', post_id=post.id) }}" method="POST" class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              {% if post.status == 'open' %}
+                <input type="hidden" name="status" value="closed">
+                <button type="submit" class="btn btn-outline-warning btn-sm">
+                  <i class="bi bi-pause-circle me-1"></i>Pause / Close
+                </button>
+              {% else %}
+                <input type="hidden" name="status" value="open">
+                <button type="submit" class="btn btn-outline-success btn-sm">
+                  <i class="bi bi-play-circle me-1"></i>Reopen Listing
+                </button>
+              {% endif %}
+            </form>
+            <form action="{{ url_for('posts.delete_post', post_id=post.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this listing permanently?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-trash me-1"></i>Delete
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {% elif session.get('user_id') %}
+        <!-- Member Connection Action -->
+        {% if existing_request %}
+          <div class="alert alert-info d-flex justify-content-between align-items-center mb-0">
+            <div>
+              <i class="bi bi-info-circle-fill me-2"></i>
+              You have an active request (Status: <strong>{{ existing_request.status | capitalize }}</strong>).
+            </div>
+            <a href="{{ url_for('exchange.view_thread', request_id=existing_request.id) }}" class="btn btn-primary btn-sm fw-bold">
+              <i class="bi bi-chat-dots me-1"></i>Open Coordination Thread
+            </a>
+          </div>
+        {% elif post.status == 'open' %}
+          <div class="p-4 border rounded-3 bg-white shadow-sm">
+            <h5 class="fw-bold mb-2">Connect with {{ post.user_name }}</h5>
+            <p class="text-muted small mb-3">
+              Express interest in this {{ post.post_type }}. A private coordination thread will open so you can arrange safe handover details without sharing your phone number or email upfront.
+            </p>
+            <form action="{{ url_for('exchange.create_request', post_id=post.id) }}" method="POST">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <div class="mb-3">
+                <label for="message" class="form-label fw-semibold small">Opening Note to {{ post.user_name }}:</label>
+                <textarea id="message" name="message" class="form-control" rows="3" required placeholder="Hi {{ post.user_name }}, I'm interested in this! When would be a convenient time to meet in a public location?"></textarea>
+              </div>
+              <div class="mb-3">
+                <label for="contact_info" class="form-label fw-semibold small">Optional Preferred Contact (kept private):</label>
+                <input type="text" id="contact_info" name="contact_info" class="form-control" placeholder="e.g. WhatsApp, Signal, or 'In-app chat preferred'">
+              </div>
+              <button type="submit" class="btn btn-primary fw-bold px-4">
+                <i class="bi bi-send me-1"></i>Send Exchange Request
+              </button>
+            </form>
+          </div>
+        {% else %}
+          <div class="alert alert-secondary mb-0">
+            <i class="bi bi-lock me-1"></i> This listing is currently <strong>{{ post.status }}</strong> and not accepting new requests.
+          </div>
+        {% endif %}
+
+        {% else %}
+        <!-- Unauthenticated Prompt -->
+        <div class="alert alert-warning d-flex justify-content-between align-items-center mb-0">
+          <div>
+            <i class="bi bi-person-lock me-2 fs-5"></i>
+            Please log in or register to express interest and message {{ post.user_name }}.
+          </div>
+          <a href="{{ url_for('auth.login', next=request.path) }}" class="btn btn-primary btn-sm fw-bold">
+            Log In to Connect
+          </a>
+        </div>
         {% endif %}
       </div>
     </div>
+
+    <!-- Right Sidebar: Author Trust Card & Matching -->
+    <div class="col-lg-4">
+      <!-- Author Community Trust Card -->
+      <div class="card card-modern p-3 mb-4">
+        <h6 class="fw-bold text-uppercase text-muted small letter-spacing-1 mb-3">Neighbor Trust Profile</h6>
+        <div class="d-flex align-items-center gap-3 mb-3">
+          {% if post.author and post.author.avatar_url %}
+            <img src="{{ post.author.avatar_url }}" alt="{{ post.user_name }}" class="rounded-circle border" width="52" height="52" style="object-fit: cover;">
+          {% else %}
+            <div class="rounded-circle bg-teal-subtle text-success d-flex align-items-center justify-content-center fw-bold fs-4" style="width: 52px; height: 52px; background-color: #f0fdfa;">
+              {{ post.user_name[0] | upper }}
+            </div>
+          {% endif %}
+          <div>
+            <h5 class="fw-bold mb-0">
+              <a href="{{ url_for('auth.public_profile', user_id=post.user_id) }}" class="text-dark text-decoration-none">
+                {{ post.user_name }}
+              </a>
+            </h5>
+            <div class="text-muted small"><i class="bi bi-geo-alt text-primary"></i> {{ post.location }}</div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded-3 mb-3 small">
+          <div>
+            <span class="text-muted d-block">Community Rating</span>
+            <span class="fw-bold text-dark">
+              <i class="bi bi-star-fill text-warning"></i> {{ author_reputation.average }} / 5.0
+            </span>
+            <span class="text-muted">({{ author_reputation.count }} reviews)</span>
+          </div>
+          <div class="text-end">
+            <span class="text-muted d-block">Badge</span>
+            <span class="badge bg-success-subtle text-success border border-success-subtle">
+              {{ author_reputation.label }}
+            </span>
+          </div>
+        </div>
+
+        <a href="{{ url_for('auth.public_profile', user_id=post.user_id) }}" class="btn btn-outline-secondary btn-sm w-100">
+          <i class="bi bi-person-badge me-1"></i>View Member Profile
+        </a>
+      </div>
+
+      <!-- Complementary Needs Nearby (Smart Matches) -->
+      {% if recommended_matches %}
+      <div class="card card-modern p-3 mb-4">
+        <h6 class="fw-bold small text-uppercase text-muted mb-2">
+          <i class="bi bi-stars text-warning me-1"></i>Complementary Matches
+        </h6>
+        <p class="text-muted small mb-3">Neighbors with complementary needs or offers in this category:</p>
+        <div class="d-flex flex-column gap-2">
+          {% for match in recommended_matches %}
+          <div class="p-2 border rounded-3 bg-light">
+            <div class="d-flex justify-content-between align-items-start">
+              <a href="{{ url_for('posts.post_detail', post_id=match.post.id) }}" class="fw-bold small text-dark text-decoration-none">
+                {{ match.post.title[:32] }}...
+              </a>
+              <span class="badge bg-success-subtle text-success small">{{ match.score }}% match</span>
+            </div>
+            <div class="text-muted small" style="font-size: 0.75rem;">
+              {{ match.post.location }} &bull; {{ match.post.user_name }}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Safe Handover Checklist -->
+      <div class="card card-modern p-3">
+        <h6 class="fw-bold small text-uppercase text-muted mb-2">
+          <i class="bi bi-shield-check text-success me-1"></i>Safe Handover Pledge
+        </h6>
+        <ul class="list-unstyled small text-muted mb-0 d-flex flex-column gap-2">
+          <li><i class="bi bi-check-circle text-success me-1"></i>Always meet in busy public spaces (cafes, campus centers).</li>
+          <li><i class="bi bi-check-circle text-success me-1"></i>No payments or deposits are required — sharing is 100% free.</li>
+          <li><i class="bi bi-check-circle text-success me-1"></i>Inspect item condition thoroughly before completing exchange.</li>
+        </ul>
+        <hr class="my-2">
+        <a href="{{ url_for('main.report_post', post_id=post.id) }}" class="text-danger small text-decoration-none">
+          <i class="bi bi-flag me-1"></i>Report this listing to moderation
+        </a>
+      </div>
+    </div>
   </div>
-</section>
+</div>
 {% endblock %}

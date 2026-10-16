@@ -5,6 +5,9 @@ from app.models.user import User
 from app.services.security_service import (
     require_csrf, login_required, is_rate_limited, record_failed_attempt, clear_rate_limit
 )
+from app.services.google_auth_service import (
+    is_google_auth_configured, generate_google_auth_url, exchange_google_code_for_userinfo
+)
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -41,7 +44,7 @@ def register():
         if errors:
             for err in errors:
                 flash(err, 'danger')
-            return render_template('register.html', name=name, email=email, location=location)
+            return render_template('register.html', name=name, email=email, location=location, is_google_configured=is_google_auth_configured())
 
         # Create user with securely hashed password
         user = User(
@@ -60,7 +63,7 @@ def register():
         flash('Registration successful! Please log in with your credentials.', 'success')
         return redirect(url_for('auth.login'))
 
-    return render_template('register.html')
+    return render_template('register.html', is_google_configured=is_google_auth_configured())
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -83,7 +86,7 @@ def login():
         )
         if limited:
             flash(f'Too many failed login attempts. Please wait {wait_or_remaining} seconds before trying again.', 'danger')
-            return render_template('login.html', email=email)
+            return render_template('login.html', email=email, is_google_configured=is_google_auth_configured())
 
         user = User.query.filter_by(email=email).first()
 
@@ -91,11 +94,11 @@ def login():
             # Check if account is suspended
             if user.is_suspended:
                 flash('Your account has been suspended by an administrator for violating community guidelines.', 'danger')
-                return render_template('login.html', email=email)
+                return render_template('login.html', email=email, is_google_configured=is_google_auth_configured())
 
             if not user.is_active:
                 flash('Your account is currently deactivated.', 'danger')
-                return render_template('login.html', email=email)
+                return render_template('login.html', email=email, is_google_configured=is_google_auth_configured())
 
             # Successful login
             clear_rate_limit(rate_key)
@@ -105,6 +108,7 @@ def login():
             session['user_email'] = user.email
             session['role'] = user.role
             session['location'] = user.location
+            session['avatar_url'] = user.avatar_url
             session.permanent = True
 
             flash(f'Welcome back, {user.name}!', 'success')
@@ -116,7 +120,7 @@ def login():
             record_failed_attempt(rate_key)
             flash('Invalid email or password.', 'danger')
 
-    return render_template('login.html')
+    return render_template('login.html', is_google_configured=is_google_auth_configured())
 
 
 @auth_bp.route('/logout', methods=['GET', 'POST'])
@@ -169,4 +173,141 @@ def profile():
 
         return redirect(url_for('auth.profile'))
 
-    return render_template('profile.html', user=user)
+    is_google_configured = is_google_auth_configured()
+    return render_template('profile.html', user=user, is_google_configured=is_google_configured)
+
+
+@auth_bp.route('/google')
+def login_google():
+    """Initiates Google OpenID Connect OAuth authorization flow."""
+    if 'user_id' in session:
+        return redirect(url_for('main.home'))
+
+    if not is_google_auth_configured():
+        flash(
+            'Google Sign-In is not currently configured by the administrator (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are required). Please use email and password to log in.',
+            'info'
+        )
+        return redirect(url_for('auth.login'))
+
+    auth_url, _ = generate_google_auth_url()
+    if not auth_url:
+        flash('Could not initialize Google authentication service.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    return redirect(auth_url)
+
+
+@auth_bp.route('/google/callback')
+def google_callback():
+    """Handles Google OAuth authorization response."""
+    if not is_google_auth_configured():
+        flash('Google authentication is not configured.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    code = request.args.get('code')
+    returned_state = request.args.get('state')
+
+    if not code:
+        err = request.args.get('error', 'Google sign-in was cancelled.')
+        flash(f'Google authentication error: {err}', 'warning')
+        return redirect(url_for('auth.login'))
+
+    userinfo, err = exchange_google_code_for_userinfo(code, returned_state)
+    if err or not userinfo:
+        flash(err or 'Failed to authenticate with Google.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    google_sub = userinfo.get('sub')
+    email = userinfo.get('email', '').strip().lower()
+    name = userinfo.get('name') or userinfo.get('given_name') or 'Neighbor'
+    avatar = userinfo.get('picture')
+
+    # Case 1: Account already linked via Google stable sub ID
+    user = User.query.filter_by(google_id=google_sub).first()
+    if user:
+        if user.is_suspended:
+            flash('Your account has been suspended for violating community guidelines.', 'danger')
+            return redirect(url_for('auth.login'))
+        if not user.is_active:
+            flash('Your account is currently deactivated.', 'danger')
+            return redirect(url_for('auth.login'))
+
+        # Update avatar if available
+        if avatar and not user.avatar_url:
+            user.avatar_url = avatar
+            db.session.commit()
+
+        session.clear()
+        session['user_id'] = user.id
+        session['user_name'] = user.name
+        session['user_email'] = user.email
+        session['role'] = user.role
+        session['location'] = user.location
+        session['avatar_url'] = user.avatar_url
+        session.permanent = True
+
+        flash(f'Welcome back, {user.name}!', 'success')
+        return redirect(url_for('main.home'))
+
+    # Case 2: User exists with this email, but NOT linked to this Google sub ID
+    existing_user_by_email = User.query.filter_by(email=email).first()
+    if existing_user_by_email:
+        # Crucial security requirement: Never silently link by email alone!
+        flash(
+            f'An account with email {email} already exists with password sign-in. '
+            'To protect your account, please log in with your password first, then connect your Google identity in Profile Settings.',
+            'warning'
+        )
+        return redirect(url_for('auth.login'))
+
+    # Case 3: Brand new user registration via Google
+    import secrets
+    new_user = User(
+        name=name[:100],
+        email=email,
+        location='Neighborhood (Set in Profile)',
+        role='user',
+        is_active=True,
+        is_suspended=False,
+        google_id=google_sub,
+        avatar_url=avatar
+    )
+    # Set random unreachable password
+    new_user.set_password(secrets.token_urlsafe(32))
+
+    db.session.add(new_user)
+    db.session.commit()
+
+    session.clear()
+    session['user_id'] = new_user.id
+    session['user_name'] = new_user.name
+    session['user_email'] = new_user.email
+    session['role'] = new_user.role
+    session['location'] = new_user.location
+    session['avatar_url'] = new_user.avatar_url
+    session.permanent = True
+
+    flash(f'Welcome to LocalShare, {new_user.name}! Your account has been created with Google.', 'success')
+    return redirect(url_for('main.dashboard'))
+
+
+@auth_bp.route('/users/<int:user_id>')
+def public_profile(user_id):
+    """Public community profile with privacy protection and verified reputation."""
+    user = User.query.get_or_404(user_id)
+    if user.is_suspended:
+        flash('This profile is unavailable.', 'warning')
+        return redirect(url_for('posts.posts'))
+
+    active_posts = user.posts.filter_by(status='open').all()
+    reviews = user.reviews_received.order_by(db.desc('created_at')).limit(10).all()
+    completed_handover_count = user.sent_requests.filter_by(status='completed').count()
+
+    return render_template(
+        'public_profile.html',
+        member=user,
+        active_posts=active_posts,
+        reviews=reviews,
+        completed_count=completed_handover_count
+    )

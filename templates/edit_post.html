@@ -1,82 +1,106 @@
 {% extends "base.html" %}
-{% block title %}Edit Post — LocalShare{% endblock %}
+
+{% block title %}Edit Listing — {{ post.title }} — LocalShare{% endblock %}
 
 {% block content %}
-<section class="py-5">
-  <div class="container">
-    <div class="row justify-content-center">
-      <div class="col-md-8 col-lg-7">
-        <div class="card border-0 shadow-sm p-4 bg-white">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3 class="fw-bold mb-0">Edit Community Post</h3>
-            <span class="badge {{ 'badge-offer' if post.post_type == 'offer' else 'badge-request' }} fs-6">
-              {{ post.post_type | capitalize }}
-            </span>
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+      <div class="card card-modern p-4 p-md-5">
+        <div class="mb-4">
+          <span class="badge bg-secondary-subtle text-secondary border px-2 py-1 small mb-2">
+            Editing Post #{{ post.id }}
+          </span>
+          <h1 class="h3 fw-bold mb-1">Edit Listing Details</h1>
+          <p class="text-muted small">Update category, condition, urgency, or description.</p>
+        </div>
+
+        <form action="{{ url_for('posts.edit_post', post_id=post.id) }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <!-- Title -->
+          <div class="mb-3">
+            <label for="title" class="form-label small fw-bold">Title</label>
+            <input type="text" id="title" name="title" class="form-control" value="{{ post.title }}" required minlength="4" maxlength="200">
           </div>
-          <p class="text-muted small mb-4">Update the details or availability status of your post.</p>
 
-          <form id="editPostForm" method="POST" action="{{ url_for('posts.edit_post', post_id=post.id) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-
+          <div class="row g-3 mb-3">
             <!-- Category -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold" for="category">Category</label>
-              <select name="category" id="category" class="form-select" required>
+            <div class="col-md-6">
+              <label for="category" class="form-label small fw-bold">Category</label>
+              <select id="category" name="category" class="form-select" required>
                 {% for cat in categories %}
-                  <option value="{{ cat }}" {{ 'selected' if post.category == cat }}>{{ cat }}</option>
+                  <option value="{{ cat }}" {% if post.category == cat %}selected{% endif %}>{{ cat }}</option>
                 {% endfor %}
               </select>
             </div>
 
-            <!-- Title -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold" for="postTitle">Title</label>
-              <input type="text" name="title" id="postTitle" class="form-control"
-                     value="{{ post.title }}" required maxlength="200"/>
-              <div class="d-flex justify-content-between small text-muted mt-1">
-                <span>Clear and concise title</span>
-                <span><span id="titleCount">{{ post.title | length }}</span>/200</span>
-              </div>
+            <!-- Priority / Urgency -->
+            <div class="col-md-6">
+              <label for="urgency" class="form-label small fw-bold">Urgency</label>
+              <select id="urgency" name="urgency" class="form-select">
+                {% for urg in urgencies %}
+                  <option value="{{ urg }}" {% if post.urgency == urg %}selected{% endif %}>{{ urg | capitalize }} Priority</option>
+                {% endfor %}
+              </select>
             </div>
+          </div>
 
-            <!-- Description -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold" for="postDesc">Description</label>
-              <textarea name="description" id="postDesc" class="form-control" rows="5"
-                        required minlength="10">{{ post.description }}</textarea>
-              <div class="form-text small">Include details like quantity, condition, or timing.</div>
-            </div>
-
-            <!-- Location -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold" for="postLocation">Location / Area</label>
-              <input type="text" name="location" id="postLocation" class="form-control"
-                     value="{{ post.location }}" required maxlength="120"/>
-            </div>
-
-            <!-- Status -->
-            <div class="mb-4">
-              <label class="form-label fw-semibold" for="postStatus">Post Status</label>
-              <select name="status" id="postStatus" class="form-select">
-                <option value="open" {{ 'selected' if post.status == 'open' }}>Open (Accepting interest)</option>
-                <option value="in_progress" {{ 'selected' if post.status == 'in_progress' }}>In Progress (Exchange coordinating)</option>
-                <option value="completed" {{ 'selected' if post.status == 'completed' }}>Completed (Exchange finished)</option>
-                <option value="closed" {{ 'selected' if post.status == 'closed' }}>Closed (Unavailable)</option>
+          <div class="row g-3 mb-3">
+            <!-- Condition -->
+            <div class="col-md-6">
+              <label for="condition" class="form-label small fw-bold">Condition</label>
+              <select id="condition" name="condition" class="form-select">
+                <option value="">Not Applicable / Skill</option>
+                {% for cond in conditions %}
+                  <option value="{{ cond }}" {% if post.condition == cond %}selected{% endif %}>{{ cond }}</option>
+                {% endfor %}
               </select>
             </div>
 
-            <div class="d-flex gap-2">
-              <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold">
-                <i class="bi bi-check2 me-1"></i>Save Changes
-              </button>
-              <a href="{{ url_for('posts.post_detail', post_id=post.id) }}" class="btn btn-outline-secondary px-4 py-2">
-                Cancel
-              </a>
+            <!-- Exchange Intent -->
+            <div class="col-md-6">
+              <label for="intent" class="form-label small fw-bold">Exchange Intent</label>
+              <select id="intent" name="intent" class="form-select">
+                {% for int_opt in intents %}
+                  <option value="{{ int_opt }}" {% if post.intent == int_opt %}selected{% endif %}>{{ int_opt | replace('_', ' / ') | capitalize }}</option>
+                {% endfor %}
+              </select>
             </div>
-          </form>
-        </div>
+          </div>
+
+          <!-- Description -->
+          <div class="mb-3">
+            <label for="description" class="form-label small fw-bold">Description</label>
+            <textarea id="description" name="description" class="form-control" rows="4" required minlength="10">{{ post.description }}</textarea>
+          </div>
+
+          <!-- Location & Status -->
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label for="location" class="form-label small fw-bold">Neighborhood Area</label>
+              <input type="text" id="location" name="location" class="form-control" value="{{ post.location }}" required>
+            </div>
+            <div class="col-md-6">
+              <label for="status" class="form-label small fw-bold">Listing Status</label>
+              <select id="status" name="status" class="form-select">
+                <option value="open" {% if post.status == 'open' %}selected{% endif %}>Open (Accepting Requests)</option>
+                <option value="in_progress" {% if post.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                <option value="completed" {% if post.status == 'completed' %}selected{% endif %}>Completed</option>
+                <option value="closed" {% if post.status == 'closed' %}selected{% endif %}>Closed / Paused</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center">
+            <a href="{{ url_for('posts.post_detail', post_id=post.id) }}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary fw-bold px-4">
+              Save Changes
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
-</section>
+</div>
 {% endblock %}

@@ -1,89 +1,123 @@
 {% extends "base.html" %}
-{% block title %}Create Post — LocalShare{% endblock %}
+
+{% block title %}Create Community Listing — LocalShare{% endblock %}
 
 {% block content %}
-<section class="py-5">
-  <div class="container">
-    <div class="row justify-content-center">
-      <div class="col-md-7 col-lg-6">
-        <div class="card border-0 shadow-sm p-4 bg-white">
-          <h3 class="fw-bold mb-1">Create a Post</h3>
-          <p class="text-muted small mb-4">Share what you need or what you are offering to neighbours.</p>
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+      <div class="card card-modern p-4 p-md-5">
+        <div class="mb-4">
+          <span class="badge bg-teal-subtle text-primary border border-primary-subtle px-2 py-1 small mb-2">
+            <i class="bi bi-arrow-repeat me-1"></i>Neighborhood Resource Exchange
+          </span>
+          <h1 class="h3 fw-bold mb-1">Publish a Community Listing</h1>
+          <p class="text-muted small">Share an item with neighbors or post a request for assistance.</p>
+        </div>
 
-          <form id="postForm" method="POST" action="{{ url_for('posts.new_post') }}" novalidate>
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <form action="{{ url_for('posts.new_post') }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            <!-- Post Type -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Post Type</label>
-              <div class="d-flex gap-4">
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="post_type"
-                         id="typeRequest" value="request" {{ 'checked' if post_type != 'offer' else '' }}/>
-                  <label class="form-check-label fw-medium" for="typeRequest">
-                    <i class="bi bi-hand-index-fill text-danger me-1"></i>Request Help
-                  </label>
-                </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="post_type"
-                         id="typeOffer" value="offer" {{ 'checked' if post_type == 'offer' else '' }}/>
-                  <label class="form-check-label fw-medium" for="typeOffer">
-                    <i class="bi bi-gift-fill text-success me-1"></i>Offer Help
-                  </label>
-                </div>
+          <!-- Listing Type Radio Selector -->
+          <div class="mb-4">
+            <label class="form-label small fw-bold">Are you Offering or Requesting?</label>
+            <div class="row g-2">
+              <div class="col-6">
+                <input type="radio" class="btn-check" name="post_type" id="type_offer" value="offer" {% if post_type != 'request' %}checked{% endif %}>
+                <label class="btn btn-outline-success w-100 py-2 d-flex align-items-center justify-content-center gap-2 fw-semibold" for="type_offer">
+                  <i class="bi bi-gift-fill fs-5"></i>
+                  <span>I'm Offering Something</span>
+                </label>
+              </div>
+              <div class="col-6">
+                <input type="radio" class="btn-check" name="post_type" id="type_request" value="request" {% if post_type == 'request' %}checked{% endif %}>
+                <label class="btn btn-outline-warning text-dark w-100 py-2 d-flex align-items-center justify-content-center gap-2 fw-semibold" for="type_request">
+                  <i class="bi bi-hand-index-thumb-fill fs-5"></i>
+                  <span>I'm Requesting Help</span>
+                </label>
               </div>
             </div>
+          </div>
 
+          <!-- Title -->
+          <div class="mb-3">
+            <label for="title" class="form-label small fw-bold">Listing Title <span class="text-danger">*</span></label>
+            <input type="text" id="title" name="title" class="form-control" placeholder="e.g. Electric drill with masonry bits, Chemistry 101 textbook, Surplus canned vegetables" value="{{ title or '' }}" required minlength="4" maxlength="200">
+            <div class="form-text small">Be specific and descriptive (4 to 200 characters).</div>
+          </div>
+
+          <div class="row g-3 mb-3">
             <!-- Category -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold" for="category">Category</label>
-              <select name="category" id="category" class="form-select" required>
-                <option value="">-- Select a category --</option>
-                <option value="Food" {{ 'selected' if category == 'Food' }}>🍱 Food</option>
-                <option value="Clothes" {{ 'selected' if category == 'Clothes' }}>👕 Clothes</option>
-                <option value="Books" {{ 'selected' if category == 'Books' }}>📚 Books</option>
-                <option value="Services" {{ 'selected' if category == 'Services' }}>🔧 Services</option>
-                <option value="Other" {{ 'selected' if category == 'Other' }}>📦 Other</option>
+            <div class="col-md-6">
+              <label for="category" class="form-label small fw-bold">Category <span class="text-danger">*</span></label>
+              <select id="category" name="category" class="form-select" required>
+                <option value="" disabled {% if not category %}selected{% endif %}>Select category...</option>
+                {% for cat in categories %}
+                  <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
               </select>
-              <div class="invalid-feedback">Please select a category.</div>
             </div>
 
-            <!-- Title -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold" for="postTitle">Title</label>
-              <input type="text" name="title" id="postTitle" class="form-control"
-                     value="{{ title or '' }}" placeholder="Short descriptive title (e.g. CBSE Class 10 Science Books)"
-                     required minlength="4" maxlength="200"/>
-              <div class="invalid-feedback">Title must be between 4 and 200 characters.</div>
-              <small class="text-muted d-block text-end mt-1"><span id="titleCount">{{ (title or '') | length }}</span>/200</small>
+            <!-- Priority / Urgency -->
+            <div class="col-md-6">
+              <label for="urgency" class="form-label small fw-bold">Urgency Priority</label>
+              <select id="urgency" name="urgency" class="form-select">
+                {% for urg in urgencies %}
+                  <option value="{{ urg }}" {% if urgency == urg %}selected{% endif %}>{{ urg | capitalize }} Priority</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <!-- Condition (Optional) -->
+            <div class="col-md-6">
+              <label for="condition" class="form-label small fw-bold">Item Condition (if applicable)</label>
+              <select id="condition" name="condition" class="form-select">
+                <option value="">Not Applicable / Skill Help</option>
+                {% for cond in conditions %}
+                  <option value="{{ cond }}" {% if condition == cond %}selected{% endif %}>{{ cond }}</option>
+                {% endfor %}
+              </select>
             </div>
 
-            <!-- Description -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold" for="postDesc">Description</label>
-              <textarea name="description" id="postDesc" class="form-control" rows="4"
-                        placeholder="Describe what you need or what you are offering (condition, timing, etc.)..."
-                        required minlength="10">{{ description or '' }}</textarea>
-              <div class="invalid-feedback">Description must be at least 10 characters.</div>
+            <!-- Exchange Intent -->
+            <div class="col-md-6">
+              <label for="intent" class="form-label small fw-bold">Exchange Intent</label>
+              <select id="intent" name="intent" class="form-select">
+                {% for int_opt in intents %}
+                  <option value="{{ int_opt }}" {% if intent == int_opt %}selected{% endif %}>{{ int_opt | replace('_', ' / ') | capitalize }}</option>
+                {% endfor %}
+              </select>
             </div>
+          </div>
 
-            <!-- Location -->
-            <div class="mb-4">
-              <label class="form-label fw-semibold" for="postLocation">Location / Area</label>
-              <input type="text" name="location" id="postLocation" class="form-control"
-                     value="{{ location or session.get('location', '') }}"
-                     placeholder="e.g. Hyderabad, Madhapur" required maxlength="120"/>
-              <div class="invalid-feedback">Location is required.</div>
-              <div class="form-text small">Use a general neighbourhood or landmark, not your private street address.</div>
+          <!-- Description -->
+          <div class="mb-3">
+            <label for="description" class="form-label small fw-bold">Full Description <span class="text-danger">*</span></label>
+            <textarea id="description" name="description" class="form-control" rows="4" required minlength="10" placeholder="Describe the item or assistance details, condition, availability timeframes, and any notes for neighbors.">{{ description or '' }}</textarea>
+          </div>
+
+          <!-- Neighborhood Location -->
+          <div class="mb-4">
+            <label for="location" class="form-label small fw-bold">Neighborhood / General Area <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text bg-light"><i class="bi bi-geo-alt text-primary"></i></span>
+              <input type="text" id="location" name="location" class="form-control" placeholder="e.g. Madhapur, Sector 4, University Hostel Block B" value="{{ location or session.get('location', '') }}" required>
             </div>
+            <div class="form-text text-muted small"><i class="bi bi-shield-check text-success me-1"></i>Do not enter apartment numbers or street addresses. Only approximate neighborhood is shown publicly.</div>
+          </div>
 
-            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm">
-              <i class="bi bi-send me-1"></i>Publish Post
+          <!-- Submit Buttons -->
+          <div class="d-flex justify-content-between align-items-center">
+            <a href="{{ url_for('posts.posts') }}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary fw-bold px-4 shadow-sm">
+              <i class="bi bi-check-lg me-1"></i>Publish to Community
             </button>
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
     </div>
   </div>
-</section>
+</div>
 {% endblock %}

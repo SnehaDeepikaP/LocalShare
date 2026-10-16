@@ -1,71 +1,76 @@
 {% extends "base.html" %}
-{% block title %}Register — LocalShare{% endblock %}
+
+{% block title %}Join LocalShare — Community Registration{% endblock %}
 
 {% block content %}
-<section class="py-5">
-  <div class="container">
-    <div class="row justify-content-center">
-      <div class="col-md-6 col-lg-5">
-        <div class="card border-0 shadow-sm p-4 bg-white">
-          <div class="text-center mb-3">
-            <i class="bi bi-person-plus-fill text-primary fs-1"></i>
-            <h3 class="fw-bold mt-2 mb-1">Join LocalShare</h3>
-            <p class="text-muted small">Create your free account to share with your neighbourhood</p>
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-7 col-lg-6 col-xl-5">
+      <div class="card card-modern p-4 p-md-5">
+        <div class="text-center mb-4">
+          <div class="d-inline-flex align-items-center justify-content-center rounded-circle p-3 mb-2" style="background-color: #f0fdfa; color: #0f766e;">
+            <i class="bi bi-person-plus fs-2"></i>
+          </div>
+          <h2 class="h4 fw-bold mb-1">Join Your Local Community</h2>
+          <p class="text-muted small">Share resources, lend items, and help neighbors</p>
+        </div>
+
+        <!-- Google Sign-In Button -->
+        <div class="mb-3">
+          <a href="{{ url_for('auth.login_google') }}" class="btn btn-google">
+            <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z" fill="#4285F4"/>
+              <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.836.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+              <path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+              <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
+            </svg>
+            <span>Continue with Google</span>
+          </a>
+        </div>
+
+        <div class="d-flex align-items-center my-3">
+          <hr class="flex-grow-1 my-0">
+          <span class="px-3 text-muted small fw-semibold">OR REGISTER WITH EMAIL</span>
+          <hr class="flex-grow-1 my-0">
+        </div>
+
+        <!-- Registration Form -->
+        <form action="{{ url_for('auth.register') }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="mb-3">
+            <label for="name" class="form-label small fw-semibold">Full Name or Preferred Name</label>
+            <input type="text" id="name" name="name" class="form-control" placeholder="Priya Sharma" value="{{ name or '' }}" required>
           </div>
 
-          <form id="registerForm" method="POST" action="{{ url_for('auth.register') }}" novalidate>
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <div class="mb-3">
+            <label for="email" class="form-label small fw-semibold">Email Address</label>
+            <input type="email" id="email" name="email" class="form-control" placeholder="priya@example.com" value="{{ email or '' }}" required>
+          </div>
 
-            <!-- Name -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold" for="name">Full Name</label>
-              <input type="text" name="name" id="name" class="form-control"
-                     value="{{ name or '' }}" placeholder="e.g. Priya Sharma" required minlength="2" maxlength="100"/>
-              <div class="invalid-feedback">Name is required (at least 2 characters).</div>
-            </div>
+          <div class="mb-3">
+            <label for="location" class="form-label small fw-semibold">Neighborhood / Area</label>
+            <input type="text" id="location" name="location" class="form-control" placeholder="e.g. Madhapur, Hitec City, Campus Hostel" value="{{ location or '' }}" required>
+            <div class="form-text small">Exact street addresses are kept private. Only neighborhood is shown.</div>
+          </div>
 
-            <!-- Email -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold" for="email">Email Address</label>
-              <input type="email" name="email" id="email" class="form-control"
-                     value="{{ email or '' }}" placeholder="you@example.com" required maxlength="120"/>
-              <div class="invalid-feedback">Enter a valid email address.</div>
-            </div>
+          <div class="mb-4">
+            <label for="password" class="form-label small fw-semibold">Password</label>
+            <input type="password" id="password" name="password" class="form-control" placeholder="At least 6 chars with 1 uppercase & 1 number" required>
+            <div class="form-text small">Must contain at least 6 characters, one capital letter, and one number.</div>
+          </div>
 
-            <!-- Password -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold" for="password">Password</label>
-              <input type="password" name="password" id="password" class="form-control"
-                     placeholder="Min 6 chars, 1 uppercase, 1 number" required minlength="6"/>
-              <div class="invalid-feedback">
-                Password must be at least 6 characters with 1 uppercase letter and 1 number.
-              </div>
-              <div class="progress mt-2" style="height: 5px;">
-                <div class="progress-bar" id="strengthBar" role="progressbar" aria-label="Password strength"></div>
-              </div>
-              <small id="strengthLabel" class="text-muted d-block mt-1"></small>
-            </div>
+          <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm mb-3">
+            Create Free Account
+          </button>
+        </form>
 
-            <!-- Location -->
-            <div class="mb-4">
-              <label class="form-label fw-semibold" for="location">Your General Location / City</label>
-              <input type="text" name="location" id="location" class="form-control"
-                     value="{{ location or '' }}" placeholder="e.g. Hyderabad" required maxlength="120"/>
-              <div class="invalid-feedback">Location is required.</div>
-              <div class="form-text small">City or district (used to connect you with nearby offers).</div>
-            </div>
-
-            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm">
-              <i class="bi bi-person-check me-1"></i>Create Free Account
-            </button>
-          </form>
-
-          <p class="text-center small mt-4 mb-0 text-muted">
-            Already have an account? <a href="{{ url_for('auth.login') }}" class="fw-semibold">Log In</a>
-          </p>
+        <div class="text-center small text-muted">
+          Already have an account?
+          <a href="{{ url_for('auth.login') }}" class="fw-bold text-primary">Sign In</a>
         </div>
       </div>
     </div>
   </div>
-</section>
+</div>
 {% endblock %}

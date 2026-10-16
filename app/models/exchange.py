@@ -16,6 +16,10 @@ class ExchangeRequest(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
+    # Relationships
+    messages = db.relationship('ExchangeMessage', backref='exchange', lazy='dynamic', cascade='all, delete-orphan')
+    reviews = db.relationship('ExchangeReview', backref='exchange', lazy='dynamic', cascade='all, delete-orphan')
+
     @property
     def is_pending(self):
         return self.status == 'pending'

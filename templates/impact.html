@@ -1,132 +1,122 @@
 {% extends "base.html" %}
-{% block title %}Community Impact Dashboard — LocalShare{% endblock %}
+
+{% block title %}Community Impact &amp; Footprint — LocalShare{% endblock %}
 
 {% block content %}
-<section class="py-5">
-  <div class="container">
-
-    <div class="text-center max-w-700 mx-auto mb-5">
-      <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill mb-2">
-        <i class="bi bi-graph-up-arrow me-1"></i> Transparent Community Metrics
-      </span>
-      <h2 class="fw-bold mb-2">LocalShare Community Impact</h2>
-      <p class="text-muted">
-        Every metric on this dashboard is computed live from verified platform database records.
-        We strictly distinguish between completed resource handovers and closed/cancelled listings.
-      </p>
-    </div>
-
-    <!-- 4 Main Metric KPI Cards -->
-    <div class="row g-4 mb-5">
-      <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-4 text-center h-100 bg-white">
-          <div class="text-primary mb-2"><i class="bi bi-people-fill fs-1"></i></div>
-          <div class="display-6 fw-bold text-dark">{{ stats['members_count'] }}</div>
-          <div class="fw-semibold text-muted small">Registered Members</div>
-          <p class="text-secondary small mt-2 mb-0">Active community neighbours participating in mutual aid.</p>
-        </div>
-      </div>
-
-      <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-4 text-center h-100 bg-white">
-          <div class="text-success mb-2"><i class="bi bi-check2-circle fs-1"></i></div>
-          <div class="display-6 fw-bold text-success">{{ stats['completed_exchanges_count'] }}</div>
-          <div class="fw-semibold text-muted small">Completed Exchanges</div>
-          <p class="text-secondary small mt-2 mb-0">Verified successful resource handovers between neighbours.</p>
-        </div>
-      </div>
-
-      <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-4 text-center h-100 bg-white">
-          <div class="text-info mb-2"><i class="bi bi-megaphone-fill fs-1"></i></div>
-          <div class="display-6 fw-bold text-info">{{ stats['active_posts_count'] }}</div>
-          <div class="fw-semibold text-muted small">Active Open Posts</div>
-          <p class="text-secondary small mt-2 mb-0">Live community requests and offers open for matching.</p>
-        </div>
-      </div>
-
-      <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-4 text-center h-100 bg-white">
-          <div class="text-warning mb-2"><i class="bi bi-hourglass-split fs-1"></i></div>
-          <div class="display-6 fw-bold text-warning">{{ stats['pending_requests_count'] }}</div>
-          <div class="fw-semibold text-muted small">Pending Exchanges</div>
-          <p class="text-secondary small mt-2 mb-0">Interest requests currently under coordination.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Category Distribution Breakdown -->
-    <div class="row g-4 mb-5">
-      <div class="col-lg-7">
-        <div class="card border-0 shadow-sm p-4 h-100 bg-white">
-          <h5 class="fw-bold mb-3"><i class="bi bi-pie-chart-fill me-2 text-primary"></i>Resource Sharing by Category</h5>
-          <p class="text-muted small mb-4">Breakdown of current active listings across resource categories</p>
-
-          {% set total_cat = stats['active_posts_count'] if stats['active_posts_count'] > 0 else 1 %}
-          {% for cat, count in stats['category_counts'].items() %}
-            {% set pct = (count / total_cat * 100) | round | int %}
-            <div class="mb-3">
-              <div class="d-flex justify-content-between align-items-center small mb-1">
-                <span class="fw-semibold">
-                  {% if cat == 'Food' %}&#127857; Food &amp; Meals
-                  {% elif cat == 'Clothes' %}&#128085; Clothes &amp; Apparel
-                  {% elif cat == 'Books' %}&#128218; Books &amp; Study Materials
-                  {% elif cat == 'Services' %}&#128295; Volunteer Services
-                  {% else %}&#128230; Other Household Items
-                  {% endif %}
-                </span>
-                <span class="text-muted">{{ count }} post{{ 's' if count != 1 else '' }} ({{ pct }}%)</span>
-              </div>
-              <div class="progress" style="height: 10px;">
-                <div class="progress-bar {% if cat == 'Food' %}bg-success{% elif cat == 'Clothes' %}bg-primary{% elif cat == 'Books' %}bg-warning{% elif cat == 'Services' %}bg-info{% else %}bg-secondary{% endif %}"
-                     role="progressbar" style="width: {{ pct }}%;" aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100"></div>
-              </div>
-            </div>
-          {% endfor %}
-        </div>
-      </div>
-
-      <div class="col-lg-5">
-        <div class="card border-0 shadow-sm p-4 h-100 bg-white">
-          <h5 class="fw-bold mb-3"><i class="bi bi-info-circle-fill me-2 text-primary"></i>Metric Definitions &amp; Integrity</h5>
-          <ul class="list-unstyled small text-secondary">
-            <li class="mb-3">
-              <strong class="text-dark"><i class="bi bi-check-circle me-1 text-success"></i>Completed Exchange:</strong>
-              A confirmed exchange where the requester and post owner agreed to transfer a resource, verified upon handover.
-            </li>
-            <li class="mb-3">
-              <strong class="text-dark"><i class="bi bi-x-circle me-1 text-secondary"></i>Closed Listing:</strong>
-              A post that was closed without a completed exchange (e.g. author cancelled, expired, or removed). Closed posts do <em>not</em> count as completed exchanges.
-            </li>
-            <li class="mb-3">
-              <strong class="text-dark"><i class="bi bi-shield-lock me-1 text-primary"></i>Privacy Guarantee:</strong>
-              Aggregated statistics never disclose private addresses, contact numbers, or personal identifying information.
-            </li>
-          </ul>
-
-          <div class="alert alert-light border small mt-auto mb-0">
-            <i class="bi bi-shield-check text-success me-1"></i> Data updated in real-time from active relational database records.
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Call to action -->
-    <div class="card border-0 shadow-sm p-4 p-md-5 text-center bg-primary text-white">
-      <h3 class="fw-bold mb-2">Be Part of the Impact</h3>
-      <p class="opacity-90 max-w-600 mx-auto mb-4">
-        Do you have unused textbooks, children's clothes, or time to help a neighbour? Post your offer today.
-      </p>
-      <div class="d-flex justify-content-center gap-3">
-        <a href="{{ url_for('posts.new_post') }}" class="btn btn-accent btn-lg px-4 shadow">
-          <i class="bi bi-plus-circle me-1"></i>Create a Post
-        </a>
-        <a href="{{ url_for('posts.posts') }}" class="btn btn-light btn-lg px-4 shadow">
-          <i class="bi bi-search me-1"></i>Browse Needs
-        </a>
-      </div>
-    </div>
-
+<div class="container py-4">
+  <!-- Page Header -->
+  <div class="text-center max-w-xl mx-auto mb-5" style="max-width: 680px;">
+    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 mb-2">
+      <i class="bi bi-shield-check me-1"></i>Verified Database Records
+    </span>
+    <h1 class="display-6 fw-bold mb-2">Community Footprint &amp; Environmental Impact</h1>
+    <p class="text-muted small">
+      Every metric shown below is aggregated live from verified database transactions. We strictly isolate mutual aid handovers from closed listings.
+    </p>
   </div>
-</section>
+
+  <!-- Primary Impact Metric Cards -->
+  <div class="row g-4 mb-5">
+    <div class="col-lg-3 col-6">
+      <div class="stat-box-modern h-100">
+        <div class="stat-box-value">{{ stats.members_count }}</div>
+        <div class="stat-box-label">Verified Neighbors</div>
+        <div class="text-success small mt-2"><i class="bi bi-check2-circle me-1"></i>Active accounts</div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-6">
+      <div class="stat-box-modern h-100">
+        <div class="stat-box-value">{{ stats.active_posts_count }}</div>
+        <div class="stat-box-label">Active Listings</div>
+        <div class="text-primary small mt-2"><i class="bi bi-arrow-repeat me-1"></i>{{ stats.offers_count }} Offers &bull; {{ stats.requests_count }} Requests</div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-6">
+      <div class="stat-box-modern h-100">
+        <div class="stat-box-value" style="color: #059669;">{{ stats.completed_exchanges_count }}</div>
+        <div class="stat-box-label">Completed Handovers</div>
+        <div class="text-success small mt-2"><i class="bi bi-hand-thumbs-up me-1"></i>Mutually confirmed</div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-6">
+      <div class="stat-box-modern h-100">
+        <div class="stat-box-value" style="color: #d97706;">{{ stats.estimated_waste_diverted_kg }} kg</div>
+        <div class="stat-box-label">Est. Landfill Waste Diverted</div>
+        <div class="text-warning small mt-2"><i class="bi bi-recycle me-1"></i>{{ stats.reused_count }} items reused/repaired</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Secondary Breakdown Section -->
+  <div class="row g-4 mb-5">
+    <!-- Category Distribution -->
+    <div class="col-lg-7">
+      <div class="card card-modern p-4 h-100">
+        <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+          <i class="bi bi-pie-chart-fill text-primary"></i>
+          <span>Open Listings by Category</span>
+        </h5>
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Category</th>
+                <th class="text-end">Active Listings</th>
+                <th class="text-end">Share</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for cat, count in stats.category_counts.items() %}
+              <tr>
+                <td class="fw-semibold">
+                  <i class="bi {% if cat == 'Food' %}bi-egg-fried text-success{% elif cat == 'Clothes' %}bi-tag text-danger{% elif cat == 'Books' %}bi-book text-primary{% elif cat == 'Tools' %}bi-tools text-warning{% else %}bi-folder2 text-secondary{% endif %} me-2"></i>
+                  {{ cat }}
+                </td>
+                <td class="text-end fw-bold">{{ count }}</td>
+                <td class="text-end text-muted small">
+                  {% if stats.active_posts_count > 0 %}
+                    {{ ((count / stats.active_posts_count) * 100) | round(1) }}%
+                  {% else %}
+                    0%
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transparent Accounting Principles -->
+    <div class="col-lg-5">
+      <div class="card card-modern p-4 h-100 bg-light">
+        <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+          <i class="bi bi-shield-check text-success"></i>
+          <span>Auditing &amp; Transparency Policy</span>
+        </h5>
+        <ul class="list-unstyled small text-secondary d-flex flex-column gap-3 mb-0">
+          <li class="d-flex gap-2">
+            <i class="bi bi-check-circle-fill text-success fs-5 flex-shrink-0"></i>
+            <div>
+              <strong>Strict Separation of Closed vs. Completed:</strong> Listings closed or deleted by authors are never counted as completed handovers.
+            </div>
+          </li>
+          <li class="d-flex gap-2">
+            <i class="bi bi-check-circle-fill text-success fs-5 flex-shrink-0"></i>
+            <div>
+              <strong>Verified Reviews Only:</strong> Feedback and star ratings can only be submitted after both parties confirm handover completion.
+            </div>
+          </li>
+          <li class="d-flex gap-2">
+            <i class="bi bi-check-circle-fill text-success fs-5 flex-shrink-0"></i>
+            <div>
+              <strong>Waste Avoidance Estimation Methodology:</strong> Calculated at 3.2 kg average solid waste avoided per reused household, textile, study, or tool item. Clearly disclosed as an estimate.
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

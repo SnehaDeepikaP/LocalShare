@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}{{ member.name }}'s Community Profile — LocalShare{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <!-- Profile Header Card -->
+  <div class="card card-modern p-4 mb-4">
+    <div class="row align-items-center">
+      <div class="col-md-auto text-center text-md-start mb-3 mb-md-0">
+        {% if member.avatar_url %}
+          <img src="{{ member.avatar_url }}" alt="{{ member.name }}" class="rounded-circle border shadow-sm" width="96" height="96" style="object-fit: cover;">
+        {% else %}
+          <div class="rounded-circle bg-teal-subtle text-success d-inline-flex align-items-center justify-content-center fw-bold fs-1 shadow-sm" style="width: 96px; height: 96px; background-color: #f0fdfa;">
+            {{ member.name[0] | upper }}
+          </div>
+        {% endif %}
+      </div>
+      <div class="col-md">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+          <h2 class="h3 fw-bold mb-0 text-dark">{{ member.name }}</h2>
+          <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+            <i class="bi bi-patch-check-fill me-1"></i>{{ member.reputation.label }}
+          </span>
+        </div>
+        <p class="text-muted small mb-2">
+          <i class="bi bi-geo-alt text-primary me-1"></i>{{ member.location }} &bull;
+          <i class="bi bi-calendar3 ms-2 me-1"></i>Joined {{ member.created_at.strftime('%B %Y') if member.created_at else 'Recently' }}
+        </p>
+        <p class="small text-secondary mb-0">
+          {{ member.bio or 'Community member actively sharing resources and helping neighbors.' }}
+        </p>
+      </div>
+      <div class="col-md-auto mt-3 mt-md-0 text-md-end">
+        <div class="p-3 bg-light rounded-3 d-inline-block text-center border">
+          <div class="fs-4 fw-bold text-dark mb-0">
+            <i class="bi bi-star-fill text-warning me-1"></i>{{ member.reputation.average }} <span class="fs-6 text-muted">/ 5.0</span>
+          </div>
+          <div class="small text-muted">{{ member.reputation.count }} genuine reviews</div>
+          <div class="badge bg-primary-subtle text-primary mt-1">{{ completed_count }} handovers completed</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Active Listings by Member -->
+    <div class="col-lg-7">
+      <div class="card card-modern p-4 h-100">
+        <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+          <i class="bi bi-grid-fill text-primary"></i>
+          <span>Active Listings by {{ member.name }}</span>
+          <span class="badge bg-light text-secondary border small">{{ active_posts|length }}</span>
+        </h5>
+
+        {% if active_posts %}
+        <div class="d-flex flex-column gap-3">
+          {% for post in active_posts %}
+          <div class="p-3 border rounded-3 bg-light">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+              <span class="{% if post.post_type == 'offer' %}badge-offer{% else %}badge-request{% endif %} small">
+                {{ post.post_type | upper }}
+              </span>
+              <span class="badge bg-white text-secondary border small">{{ post.category }}</span>
+            </div>
+            <h6 class="fw-bold mb-1">
+              <a href="{{ url_for('posts.post_detail', post_id=post.id) }}" class="text-dark text-decoration-none">
+                {{ post.title }}
+              </a>
+            </h6>
+            <p class="text-muted small mb-2">{{ post.description[:95] }}...</p>
+            <div class="d-flex justify-content-between align-items-center small text-muted">
+              <span><i class="bi bi-geo-alt"></i> {{ post.location }}</span>
+              <a href="{{ url_for('posts.post_detail', post_id=post.id) }}" class="fw-bold text-primary text-decoration-none">
+                View &amp; Connect &raquo;
+              </a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state py-4">
+          <i class="bi bi-inbox empty-state-icon" style="font-size: 2rem;"></i>
+          <p class="text-muted small mb-0">{{ member.name }} does not have any open listings right now.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Feedback & Reviews Received -->
+    <div class="col-lg-5">
+      <div class="card card-modern p-4 h-100">
+        <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+          <i class="bi bi-chat-heart-fill text-warning"></i>
+          <span>Neighbor Feedback</span>
+          <span class="badge bg-light text-secondary border small">{{ reviews|length }}</span>
+        </h5>
+
+        {% if reviews %}
+        <div class="d-flex flex-column gap-3">
+          {% for rev in reviews %}
+          <div class="p-3 border rounded-3 bg-light">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <div class="fw-bold small text-dark">
+                <i class="bi bi-person-circle me-1"></i>{{ rev.reviewer_name }}
+              </div>
+              <div>
+                {% for _ in range(rev.rating) %}<i class="bi bi-star-fill text-warning small"></i>{% endfor %}
+              </div>
+            </div>
+            <p class="small text-secondary mb-1">
+              "{{ rev.comment or 'Pleasant and reliable neighbor.' }}"
+            </p>
+            <div class="d-flex justify-content-between align-items-center text-muted" style="font-size: 0.75rem;">
+              <span>{{ rev.created_at }}</span>
+              {% if rev.was_reused_or_repaired %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                  <i class="bi bi-recycle me-1"></i>Reused Item
+                </span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state py-4">
+          <i class="bi bi-chat-square-heart empty-state-icon" style="font-size: 2rem;"></i>
+          <p class="text-muted small mb-0">No reviews yet. Reviews are generated only after completed exchanges.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,104 +1,99 @@
 {% extends "base.html" %}
+
 {% block title %}Smart Recommendations &amp; Matches — LocalShare{% endblock %}
 
 {% block content %}
-<section class="py-5">
-  <div class="container">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-      <div>
-        <h2 class="fw-bold mb-1"><i class="bi bi-stars text-warning me-2"></i>Smart Match Recommendations</h2>
-        <p class="text-muted small mb-0">Deterministic recommendations tailored to your active community posts</p>
-      </div>
-      <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
-      </a>
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <div>
+      <h1 class="h3 fw-bold mb-1"><i class="bi bi-stars text-warning me-2"></i>Smart Match Recommendations</h1>
+      <p class="text-muted small mb-0">Explainable, 100-point deterministic recommendations tailored to your active listings.</p>
     </div>
-
-    <!-- Algorithm Explanation Banner -->
-    <div class="card border-0 shadow-sm p-4 bg-light mb-4">
-      <div class="row align-items-center">
-        <div class="col-md-8">
-          <h5 class="fw-bold mb-1 text-dark">How are these matches calculated?</h5>
-          <p class="small text-muted mb-0">
-            Our transparent matching engine evaluates 4 deterministic criteria: complementary type compatibility (Offer &harr; Request, up to 40 pts), category match (30 pts), keyword &amp; text overlap (up to 20 pts), and local area proximity (up to 10 pts).
-          </p>
-        </div>
-        <div class="col-md-4 text-md-end mt-3 mt-md-0">
-          <span class="badge bg-primary px-3 py-2 fs-6">Min Threshold: 30%</span>
-        </div>
-      </div>
-    </div>
-
-    {% if matches %}
-      <div class="row g-4">
-        {% for m in matches %}
-          <div class="col-md-6 col-lg-4">
-            <div class="card border-0 shadow-sm h-100 bg-white d-flex flex-column">
-              <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <span class="badge {{ 'badge-offer' if m.post.post_type == 'offer' else 'badge-request' }}">
-                    {{ m.post.post_type | capitalize }}
-                  </span>
-                  <span class="badge bg-primary text-white fs-6">
-                    {{ m.score }}% Match
-                  </span>
-                </div>
-
-                <h5 class="card-title fw-bold mb-2">
-                  <a href="{{ url_for('posts.post_detail', post_id=m.post.id) }}" class="text-decoration-none text-dark">
-                    {{ m.post.title }}
-                  </a>
-                </h5>
-                <p class="card-text small text-muted mb-3">
-                  {{ m.post.description[:100] }}...
-                </p>
-
-                {% if m.matched_with_my_post %}
-                  <div class="alert alert-info py-2 px-3 small mb-3">
-                    <i class="bi bi-link-45deg me-1"></i>Matched with your post: <strong>{{ m.matched_with_my_post.title }}</strong>
-                  </div>
-                {% endif %}
-
-                <!-- Factor Details Accordion / List -->
-                <div class="border rounded p-2 bg-light small mb-3">
-                  <div class="fw-bold mb-1 text-secondary">Match Factors:</div>
-                  {% for f in m.factors %}
-                    <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-light">
-                      <span>{{ f.factor }}</span>
-                      <span class="fw-semibold {% if f.score > 0 %}text-success{% else %}text-muted{% endif %}">
-                        {{ f.score }}/{{ f.max_score }} pts
-                      </span>
-                    </div>
-                  {% endfor %}
-                </div>
-              </div>
-
-              <div class="card-footer bg-transparent border-0 pt-0 pb-3 px-3 mt-auto">
-                <div class="d-flex justify-content-between small text-muted mb-3">
-                  <span><i class="bi bi-geo-alt me-1 text-primary"></i>{{ m.post.location }}</span>
-                  <span><i class="bi bi-person me-1"></i>{{ m.post.user_name }}</span>
-                </div>
-                <a href="{{ url_for('posts.post_detail', post_id=m.post.id) }}" class="btn btn-outline-primary btn-sm w-100 fw-semibold">
-                  View Post &amp; Request Exchange &rarr;
-                </a>
-              </div>
-            </div>
-          </div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <div class="text-center py-5 card border-0 p-4 bg-white">
-        <i class="bi bi-stars fs-1 text-warning"></i>
-        <h4 class="mt-2 fw-semibold">No high-confidence matches found yet</h4>
-        <p class="text-muted small max-w-600 mx-auto">
-          We couldn't find complementary open posts matching your active listings above the 30% score threshold.
-          Try posting new resources or expanding your keywords.
-        </p>
-        <div>
-          <a href="{{ url_for('posts.posts') }}" class="btn btn-primary btn-sm">Browse All Posts</a>
-        </div>
-      </div>
-    {% endif %}
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+    </a>
   </div>
-</section>
+
+  <!-- Transparent Scoring Formula Banner -->
+  <div class="card card-modern p-4 mb-4 bg-light">
+    <div class="row align-items-center">
+      <div class="col-md-9">
+        <h5 class="fw-bold mb-1 text-dark">Transparent Community Recommendation Formula</h5>
+        <p class="small text-muted mb-0">
+          Our algorithm does not rely on third-party opaque AI models. Matches are scored on an explainable 100-point scale:
+          <strong>Type Complementarity</strong> (Offer &harr; Request), <strong>Category Relevance</strong> (40 pts),
+          <strong>Keyword Overlap</strong> (30 pts), <strong>Location Match</strong> (20 pts), and <strong>Urgency Priority</strong> (10 pts).
+        </p>
+      </div>
+      <div class="col-md-3 text-md-end mt-3 mt-md-0">
+        <span class="badge bg-primary px-3 py-2 fs-6">Min Threshold: 30 pts</span>
+      </div>
+    </div>
+  </div>
+
+  {% if matches %}
+    <div class="row g-4">
+      {% for m in matches %}
+        <div class="col-md-6 col-lg-4">
+          <div class="card card-modern h-100 p-3 bg-white d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="{% if m.post.post_type == 'offer' %}badge-offer{% else %}badge-request{% endif %} small">
+                {{ m.post.post_type | upper }}
+              </span>
+              <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold fs-6">
+                {{ m.score }}/100 Match
+              </span>
+            </div>
+
+            <h5 class="fw-bold mb-1">
+              <a href="{{ url_for('posts.post_detail', post_id=m.post.id) }}" class="text-dark text-decoration-none">
+                {{ m.post.title }}
+              </a>
+            </h5>
+            <p class="small text-muted mb-3 flex-grow-1">
+              {{ m.post.description[:95] }}...
+            </p>
+
+            {% if m.matched_with_my_post %}
+              <div class="alert alert-info py-2 px-3 small mb-3">
+                <i class="bi bi-link-45deg me-1"></i>Complements your listing: <strong>{{ m.matched_with_my_post.title }}</strong>
+              </div>
+            {% endif %}
+
+            <!-- Factor Breakdown Table -->
+            <div class="border rounded-3 p-2 bg-light small mb-3">
+              <div class="fw-bold mb-1 text-secondary" style="font-size: 0.75rem;">Factor Score Breakdown:</div>
+              {% for f in m.factors %}
+                <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-white" style="font-size: 0.78rem;">
+                  <span>{{ f.factor }}</span>
+                  <span class="fw-bold {% if f.score > 0 %}text-success{% else %}text-muted{% endif %}">
+                    +{{ f.score }} / {{ f.max_score }}
+                  </span>
+                </div>
+              {% endfor %}
+            </div>
+
+            <div class="pt-2 border-top d-flex justify-content-between small text-muted mb-3">
+              <span><i class="bi bi-geo-alt text-primary"></i> {{ m.post.location }}</span>
+              <span><i class="bi bi-person"></i> {{ m.post.user_name }}</span>
+            </div>
+
+            <a href="{{ url_for('posts.post_detail', post_id=m.post.id) }}" class="btn btn-outline-primary btn-sm w-100 fw-bold">
+              View Post &amp; Connect <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-state-icon"><i class="bi bi-stars text-warning"></i></div>
+      <h4 class="fw-bold">No High-Confidence Matches Found</h4>
+      <p class="text-muted small max-w-sm mx-auto mb-3" style="max-width: 480px;">
+        We couldn't find complementary open listings above the 30% score threshold. Post more items or adjust categories to discover new mutual aid opportunities.
+      </p>
+      <a href="{{ url_for('posts.posts') }}" class="btn btn-primary btn-sm">Explore All Listings</a>
+    </div>
+  {% endif %}
+</div>
 {% endblock %}

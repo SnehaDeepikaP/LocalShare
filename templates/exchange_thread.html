@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Coordination Thread — {{ post.title }} — LocalShare{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <!-- Breadcrumb Navigation -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Home</a></li>
+      <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Exchange #{{ exchange.id }}</li>
+    </ol>
+  </nav>
+
+  <div class="row g-4">
+    <!-- Left Column: Chat Conversation Thread -->
+    <div class="col-lg-8">
+      <div class="thread-container shadow-sm mb-4">
+        <!-- Thread Header -->
+        <div class="thread-header d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-chat-left-text-fill text-primary fs-4"></i>
+            <div>
+              <h5 class="fw-bold mb-0">Coordination with {{ other_party.name }}</h5>
+              <div class="text-muted small">Regarding: <strong>{{ post.title }}</strong></div>
+            </div>
+          </div>
+          <div>
+            <span class="badge {% if exchange.status == 'accepted' %}bg-success{% elif exchange.status == 'completed' %}bg-primary{% elif exchange.status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %} px-3 py-2 text-uppercase fs-6">
+              {{ exchange.status }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Privacy Shield Banner in Thread -->
+        <div class="bg-light border-bottom p-2 px-3 small text-muted d-flex align-items-center gap-2">
+          <i class="bi bi-shield-lock text-success"></i>
+          <span>This conversation is private between you, {{ other_party.name }}, and platform safety moderators.</span>
+        </div>
+
+        <!-- Messages Timeline -->
+        <div class="thread-messages" id="messageList">
+          {% if messages %}
+            {% for msg in messages %}
+              <div class="msg-bubble {% if msg.sender_id == session['user_id'] %}msg-bubble-me{% else %}msg-bubble-them{% endif %}">
+                <div class="fw-bold small mb-1" style="font-size: 0.78rem;">
+                  {% if msg.sender_id == session['user_id'] %}You{% else %}{{ msg.sender_name }}{% endif %}
+                </div>
+                <div>{{ msg.content }}</div>
+                <span class="msg-timestamp">{{ msg.created_at }}</span>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-center text-muted py-4 small">
+              <i class="bi bi-chat-dots fs-3 d-block mb-1"></i>
+              No messages yet in this thread.
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Reply Input Form -->
+        {% if exchange.status in ['pending', 'accepted'] %}
+        <div class="p-3 bg-light border-top">
+          <form action="{{ url_for('exchange.view_thread', request_id=exchange.id) }}" method="POST" class="d-flex gap-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="text" name="content" class="form-control" placeholder="Type a message to coordinate location and time..." required maxlength="2000" autocomplete="off">
+            <button type="submit" class="btn btn-primary px-4 fw-bold">
+              <i class="bi bi-send-fill me-1"></i>Send
+            </button>
+          </form>
+        </div>
+        {% else %}
+        <div class="p-3 bg-light border-top text-center text-muted small">
+          This thread is closed because the exchange status is <strong>{{ exchange.status }}</strong>.
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Completed Exchange Review / Feedback Section -->
+      {% if exchange.status == 'completed' %}
+      <div class="card card-modern p-4 border-success-subtle bg-light">
+        <h5 class="fw-bold mb-2"><i class="bi bi-star-fill text-warning me-2"></i>Exchange Feedback &amp; Sustainability Check</h5>
+        {% if user_review %}
+          <div class="alert alert-success d-flex align-items-center mb-0">
+            <i class="bi bi-check-circle-fill fs-4 me-2"></i>
+            <div>
+              <strong>You rated this exchange {{ user_review.rating }} / 5 stars.</strong><br/>
+              <span class="small text-muted">{{ user_review.comment or 'No written feedback provided.' }}</span>
+              {% if user_review.was_reused_or_repaired %}
+                <span class="badge bg-success ms-2"><i class="bi bi-recycle me-1"></i>Marked as Reused / Repaired</span>
+              {% endif %}
+            </div>
+          </div>
+        {% else %}
+          <p class="text-muted small mb-3">
+            How was your exchange with {{ other_party.name }}? Your rating strengthens neighborhood trust and calculates member reputation.
+          </p>
+          <form action="{{ url_for('exchange.review_exchange', request_id=exchange.id) }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+              <label for="rating" class="form-label fw-bold small">Community Rating:</label>
+              <select name="rating" id="rating" class="form-select form-select-sm w-auto">
+                <option value="5" selected>⭐⭐⭐⭐⭐ 5 - Excellent &amp; Respectful</option>
+                <option value="4">⭐⭐⭐⭐ 4 - Very Good</option>
+                <option value="3">⭐⭐⭐ 3 - Satisfactory</option>
+                <option value="2">⭐⭐ 2 - Needed Improvement</option>
+                <option value="1">⭐ 1 - Poor / Unreliable</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="comment" class="form-label fw-bold small">Optional Public Community Note:</label>
+              <textarea name="comment" id="comment" class="form-control" rows="2" placeholder="Prompt response, item in great condition, highly recommended neighbor!"></textarea>
+            </div>
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" name="was_reused_or_repaired" id="reusedCheck" value="1" checked>
+              <label class="form-check-label small" for="reusedCheck">
+                <i class="bi bi-recycle text-success me-1"></i>
+                <strong>Environmental Impact:</strong> This item or service diverted waste, enabled reuse, or repaired an item.
+              </label>
+            </div>
+            <button type="submit" class="btn btn-success fw-bold px-4">
+              Submit Neighborhood Feedback
+            </button>
+          </form>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Right Sidebar: Listing Summary & Action Controls -->
+    <div class="col-lg-4">
+      <!-- Listing Snapshot -->
+      <div class="card card-modern p-3 mb-4">
+        <h6 class="fw-bold text-uppercase text-muted small letter-spacing-1 mb-2">Item / Request Snapshot</h6>
+        <h5 class="fw-bold mb-1">
+          <a href="{{ url_for('posts.post_detail', post_id=post.id) }}" class="text-dark text-decoration-none">
+            {{ post.title }}
+          </a>
+        </h5>
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span class="{% if post.post_type == 'offer' %}badge-offer{% else %}badge-request{% endif %} small">
+            {{ post.post_type | upper }}
+          </span>
+          <span class="badge bg-light text-secondary border small">{{ post.category }}</span>
+        </div>
+        <p class="text-muted small mb-3">{{ post.description[:100] }}...</p>
+        <div class="small text-muted mb-3"><i class="bi bi-geo-alt text-primary"></i> Area: {{ post.location }}</div>
+        <a href="{{ url_for('posts.post_detail', post_id=post.id) }}" class="btn btn-outline-secondary btn-sm w-100">
+          View Original Listing
+        </a>
+      </div>
+
+      <!-- Handshake Actions Card -->
+      <div class="card card-modern p-3 mb-4">
+        <h6 class="fw-bold text-uppercase text-muted small letter-spacing-1 mb-3">Handover Controls</h6>
+
+        {% if exchange.status == 'pending' %}
+          {% if session.get('user_id') == post.user_id %}
+            <p class="small text-muted mb-3">
+              {{ exchange.requester.name }} requested to connect. Choose whether to accept and unlock details:
+            </p>
+            <form action="{{ url_for('exchange.respond_request', request_id=exchange.id) }}" method="POST" class="mb-2">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="action" value="accept">
+              <button type="submit" class="btn btn-success w-100 fw-bold mb-2">
+                <i class="bi bi-check-lg me-1"></i>Accept &amp; Coordinate
+              </button>
+            </form>
+            <form action="{{ url_for('exchange.respond_request', request_id=exchange.id) }}" method="POST">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="action" value="decline">
+              <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                <i class="bi bi-x-lg me-1"></i>Decline Request
+              </button>
+            </form>
+          {% else %}
+            <p class="small text-muted mb-3">
+              Waiting for {{ post.author.name }} to accept your request. You can cancel if plans changed:
+            </p>
+            <form action="{{ url_for('exchange.cancel_request', request_id=exchange.id) }}" method="POST">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-outline-secondary btn-sm w-100">
+                Cancel Request
+              </button>
+            </form>
+          {% endif %}
+
+        {% elif exchange.status == 'accepted' %}
+          <div class="alert alert-success py-2 small mb-3">
+            <i class="bi bi-check2-circle me-1"></i> Request accepted! Coordinate meeting time and place above.
+          </div>
+          <p class="small text-muted mb-2">
+            Once you meet and the handover is done, mark the exchange completed:
+          </p>
+          <form action="{{ url_for('exchange.complete_exchange', request_id=exchange.id) }}" method="POST" onsubmit="return confirm('Confirm that the handover has successfully taken place?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-primary w-100 fw-bold">
+              <i class="bi bi-check2-all me-1"></i>Mark Exchange Completed
+            </button>
+          </form>
+
+        {% elif exchange.status == 'completed' %}
+          <div class="alert alert-success py-2 small mb-0 text-center">
+            <i class="bi bi-trophy-fill text-warning fs-5 d-block mb-1"></i>
+            <strong>Exchange Completed!</strong><br/>
+            Thank you for supporting community mutual aid.
+          </div>
+        {% else %}
+          <div class="text-muted small">This exchange was {{ exchange.status }}.</div>
+        {% endif %}
+      </div>
+
+      <!-- Safe Handover Tips -->
+      <div class="card card-modern p-3 bg-light">
+        <h6 class="fw-bold small text-muted mb-2"><i class="bi bi-lightbulb me-1"></i>Handover Safety Tips</h6>
+        <ul class="list-unstyled small text-muted mb-0 d-flex flex-column gap-1">
+          <li>&bull; Meet at a campus gate, community center, or market.</li>
+          <li>&bull; Do not exchange sensitive financial or personal accounts.</li>
+          <li>&bull; Bring a friend or companion for high-value items.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Auto-scroll messages list to bottom
+  const msgList = document.getElementById('messageList');
+  if (msgList) {
+    msgList.scrollTop = msgList.scrollHeight;
+  }
+</script>
+{% endblock %}

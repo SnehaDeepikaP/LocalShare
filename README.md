@@ -1,39 +1,41 @@
-# LocalShare — Community Resource-Sharing & Mutual Aid Platform
+# LocalShare 3.0 — Modern Community Resource-Sharing & Mutual Aid Platform
 
 [![Python](https://img.shields.io/badge/Python-3.13.7-blue.svg)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.0.0-green.svg)](https://palletsprojects.com/p/flask/)
 [![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.1.4-red.svg)](https://www.sqlalchemy.org/)
-[![Tests](https://img.shields.io/badge/pytest-34%20passed-brightgreen.svg)](tests/)
-[![Coverage](https://img.shields.io/badge/coverage-72%25-success.svg)](docs/05_TEST_PLAN_AND_REPORT.md)
+[![Tests](https://img.shields.io/badge/pytest-42%20passed-brightgreen.svg)](tests/)
+[![Coverage](https://img.shields.io/badge/coverage-70%25-success.svg)](docs/05_TEST_PLAN_AND_REPORT.md)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**LocalShare** is an enterprise-grade, production-quality community mutual aid and resource-sharing web platform. It connects neighbours who need help with those who can offer it—enabling non-monetary sharing of books, clothes, food donations, household supplies, and volunteer services.
+**LocalShare 3.0** is an innovative, customer-ready community mutual aid and circular resource-sharing web platform. Designed with warmth, distinct brand identity, and rigorous security, it connects neighbors to borrow tools, pass along textbooks, share surplus groceries, and offer everyday assistance without money changing hands.
 
-Engineered with a **modular monolithic architecture**, a **transparent 100-point deterministic smart matching engine**, **end-to-end user exchange coordination**, **trust and safety moderation**, and **live database-backed community impact metrics**.
+Engineered with a **modular monolithic Flask architecture**, **Google OpenID Connect (OIDC)**, **safe in-app conversation threads**, a **transparent 100-point deterministic smart matching engine**, **peer feedback and reputation scores**, **watchlist bookmarking**, and **verified sustainability metrics**.
 
 ---
 
 ## 🚀 Key Features
 
-- **🔐 Enterprise Authentication & Security:** Werkzeug Scrypt password hashing, automatic legacy plaintext account migration, login brute-force rate limiting (sliding-window), cryptographic CSRF token validation, and enterprise HTTP security response headers (`CSP`, `X-Frame-Options`, `nosniff`).
-- **📦 Post Lifecycle Management:** Create, browse, search, filter, paginate, edit, close, reopen, and complete community **Offers** and **Requests** across 5 core categories (`Food`, `Clothes`, `Books`, `Services`, `Other`).
-- **🤝 User-to-User Exchange Workflow:** Complete in-app negotiation flow: express interest, owner accept/decline coordination, private communication unlocked only upon acceptance, and verified handover completion tracking.
-- **✨ Deterministic Smart Matching Engine:** Fully explainable 100-point algorithm evaluating post type complementarity (40 pts), category relevance (30 pts), Jaccard keyword overlap (20 pts), and geographic proximity (10 pts) with transparent factor breakdowns.
-- **🛡️ Trust & Safety Moderation:** Community post/user reporting, dedicated administrator moderation queue, account suspension/restoration, and an immutable administrative audit log.
-- **📊 Real-Time Community Impact Dashboard:** Verified database-backed metrics tracking active posts, completed handovers, and category distributions—strictly distinguishing completed exchanges from closed/cancelled listings.
-- **♿ Modern Responsive UI:** Accessible HTML5 markup, WCAG 2.1 AA compliant contrast ratios, visible focus rings, responsive Bootstrap 5 grids, and friendly validation.
+- **🔐 Dual Authentication (Google OIDC + Password):** Official Google OpenID Connect authorization code flow with state/nonce validation, stable `sub` matching, and protection against silent email takeover. Fallback to Werkzeug Scrypt password hashing with brute-force rate limiting.
+- **💬 Safe In-App Message Threads:** Private, encrypted-in-transit conversation threads tied to exchange requests, allowing neighbors to coordinate meetings without sharing personal phone numbers or exact addresses upfront.
+- **⭐ Peer Reviews & Community Reputation:** 1-5 star ratings and feedback submitted after completed exchanges. Transparent reputation badges (`Trusted Pillar`, `Active Helper`, `New Neighbor`) displayed on privacy-shielded public profiles.
+- **🔖 Watchlist & Saved Listings:** 1-click bookmarking of items to review or track in a dedicated dashboard watchlist.
+- **🌱 Environmental Sustainability Tracking:** Post-exchange checklist verifying item reuse or repair, estimating landfill solid waste diversion (3.2 kg average avoided per item) backed by transparent accounting.
+- **✨ 100-Point Explainable Smart Matching:** Deterministic algorithm evaluating type complementarity, category relevance, Jaccard keyword overlap, location match, and urgency priority.
+- **🛡️ Trust, Privacy & Moderation:** Approximate neighborhood areas (exact home addresses withheld), abuse reporting queue, user suspension controls, and immutable administrative audit logging.
+- **🔔 In-App Notification Center:** Unread alerts for requests, messages, handshakes, and reviews with badge counters in the navbar.
+- **♿ Modern Responsive UI:** Plus Jakarta Sans typography, Community Teal & Warm Amber design system, WCAG 2.1 AA compliant contrast ratios, and visible focus rings.
 
 ---
 
 ## 🛠️ Technology Stack
 
 - **Backend Runtime:** Python 3.13.7
-- **Web Framework:** Flask 3.0.0 (Application Factory Pattern with 6 Blueprints)
-- **Database & ORM:** SQLite 3 (Local Development) / PostgreSQL (Production) with SQLAlchemy 2.1 & Flask-Migrate
-- **WSGI Servers:** Waitress 3.0.2 (Cross-Platform) / Gunicorn (POSIX)
-- **Frontend:** Jinja2 Templates, Bootstrap 5.3.0, Bootstrap Icons 1.10.5, jQuery 3.7.1
-- **Testing:** pytest 9.1.1 & pytest-cov 7.1.0 (34 Automated Tests, 72% Coverage)
-- **Containerization:** Docker multi-stage build & Docker Compose with persistent volume
+- **Web Framework:** Flask 3.0.0 (Application Factory with 6 Blueprints: `auth`, `posts`, `exchange`, `matching`, `admin`, `main`)
+- **Authentication:** Authlib 1.9.1 & Requests (Google OpenID Connect OIDC) + Werkzeug Scrypt
+- **Database & ORM:** SQLite 3 (Dev) / PostgreSQL (Prod) with SQLAlchemy 2.1.4
+- **WSGI Server:** Waitress 3.0.2 (Production Multi-threaded WSGI)
+- **Frontend:** Jinja2, Bootstrap 5.3.0, Bootstrap Icons 1.10.5, Plus Jakarta Sans
+- **Automated Testing:** pytest 9.1.1 & pytest-cov 7.1.0 (42 Automated Tests, 70% Statement Coverage)
 
 ---
 

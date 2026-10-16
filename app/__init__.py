@@ -17,8 +17,16 @@ def create_app(config_name=None):
 
     # Register context processors
     @app.context_processor
-    def inject_csrf_token():
-        return dict(csrf_token=generate_csrf_token)
+    def inject_global_data():
+        unread = 0
+        from flask import session
+        if 'user_id' in session:
+            try:
+                from app.models.notification import Notification
+                unread = Notification.query.filter_by(user_id=session['user_id'], is_read=False).count()
+            except Exception:
+                unread = 0
+        return dict(csrf_token=generate_csrf_token, unread_notifications_count=unread)
 
     # Register after-request security headers
     app.after_request(add_security_headers)

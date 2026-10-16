@@ -1,206 +1,235 @@
 {% extends "base.html" %}
-{% block title %}Browse Community Posts — LocalShare{% endblock %}
+
+{% block title %}Explore Community Listings — LocalShare{% endblock %}
 
 {% block content %}
-<section class="py-5">
-  <div class="container">
-
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-      <div>
-        <h2 class="fw-bold mb-1">Browse Community Resources</h2>
-        <p class="text-muted small mb-0">Discover offers and requests across your neighbourhood</p>
-      </div>
-      {% if session.get('user_id') %}
-        <a href="{{ url_for('posts.new_post') }}" class="btn btn-accent btn-sm shadow-sm">
-          <i class="bi bi-plus-circle me-1"></i>Create New Post
-        </a>
-      {% endif %}
+<div class="container py-4">
+  <!-- Page Header -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+      <h1 class="h3 fw-bold mb-1">Community Mutual Aid &amp; Sharing</h1>
+      <p class="text-muted small mb-0">Browse resources offered by neighbors or discover where you can lend a hand.</p>
     </div>
+    {% if session.get('user_id') %}
+    <a href="{{ url_for('posts.new_post') }}" class="btn btn-primary shadow-sm d-flex align-items-center gap-1">
+      <i class="bi bi-plus-lg fw-bold"></i><span>Create Listing</span>
+    </a>
+    {% endif %}
+  </div>
 
-    <!-- Search & Filter Card -->
-    <div class="card border-0 shadow-sm mb-4 p-3 bg-white">
-      <form method="GET" action="{{ url_for('posts.posts') }}">
-        <div class="row g-2 align-items-end">
-          <!-- Keyword Search -->
-          <div class="col-md-3">
-            <label class="form-label small fw-semibold mb-1" for="filterSearch">Keyword</label>
-            <div class="input-group input-group-sm">
-              <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-              <input type="text" id="filterSearch" name="q" class="form-control"
-                     placeholder="e.g. maths, rice, winter coat" value="{{ query_text }}"/>
-            </div>
+  <!-- Type Selection Tabs -->
+  <ul class="nav nav-pills mb-3 border-bottom pb-2 gap-2" role="tablist">
+    <li class="nav-item">
+      <a class="nav-link py-1 px-3 fw-bold {% if not selected_type %}active bg-primary text-white{% else %}text-muted{% endif %}"
+         href="{{ url_for('posts.posts', category=selected_category, urgency=selected_urgency, q=query_text, sort=sort_by) }}">
+        All Listings
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link py-1 px-3 fw-bold {% if selected_type == 'offer' %}active bg-success text-white{% else %}text-muted{% endif %}"
+         href="{{ url_for('posts.posts', type='offer', category=selected_category, urgency=selected_urgency, q=query_text, sort=sort_by) }}">
+        <i class="bi bi-gift me-1"></i>Offers (Available to Take)
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link py-1 px-3 fw-bold {% if selected_type == 'request' %}active bg-warning text-dark{% else %}text-muted{% endif %}"
+         href="{{ url_for('posts.posts', type='request', category=selected_category, urgency=selected_urgency, q=query_text, sort=sort_by) }}">
+        <i class="bi bi-hand-index-thumb me-1"></i>Requests (Help Needed)
+      </a>
+    </li>
+  </ul>
+
+  <!-- Filter & Search Panel -->
+  <div class="card card-modern p-3 mb-4 bg-white">
+    <form action="{{ url_for('posts.posts') }}" method="GET" class="row g-2 align-items-center">
+      {% if selected_type %}
+        <input type="hidden" name="type" value="{{ selected_type }}">
+      {% endif %}
+
+      <div class="col-lg-3 col-md-6">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+          <input type="text" name="q" class="form-control border-start-0" placeholder="Search keywords..." value="{{ query_text }}">
+        </div>
+      </div>
+
+      <div class="col-lg-2 col-md-3 col-6">
+        <select name="category" class="form-select form-select-sm" aria-label="Filter by Category">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+            <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-lg-2 col-md-3 col-6">
+        <select name="urgency" class="form-select form-select-sm" aria-label="Filter by Urgency">
+          <option value="">Any Urgency</option>
+          {% for urg in urgencies %}
+            <option value="{{ urg }}" {% if selected_urgency == urg %}selected{% endif %}>{{ urg | capitalize }} Priority</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-lg-2 col-md-4 col-6">
+        <select name="condition" class="form-select form-select-sm" aria-label="Filter by Condition">
+          <option value="">Any Condition</option>
+          {% for cond in conditions %}
+            <option value="{{ cond }}" {% if selected_condition == cond %}selected{% endif %}>{{ cond }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-lg-2 col-md-4 col-6">
+        <select name="sort" class="form-select form-select-sm" aria-label="Sort listings">
+          <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest First</option>
+          <option value="urgent_first" {% if sort_by == 'urgent_first' %}selected{% endif %}>Urgent First</option>
+          <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Oldest First</option>
+          <option value="title" {% if sort_by == 'title' %}selected{% endif %}>Title (A-Z)</option>
+        </select>
+      </div>
+
+      <div class="col-lg-1 col-md-4 col-12 d-flex gap-1">
+        <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold">Filter</button>
+        {% if query_text or selected_category or selected_urgency or selected_condition or selected_type %}
+          <a href="{{ url_for('posts.posts') }}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+            <i class="bi bi-x-lg"></i>
+          </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <!-- Listings Grid -->
+  {% if posts %}
+  <div class="row g-4">
+    {% for post in posts %}
+    <div class="col-lg-4 col-md-6">
+      <div class="card card-modern h-100 p-3 d-flex flex-column">
+        <!-- Card Top Bar: Badges & Bookmark -->
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div class="d-flex flex-wrap align-items-center gap-1">
+            <span class="{% if post.post_type == 'offer' %}badge-offer{% else %}badge-request{% endif %}">
+              <i class="bi {% if post.post_type == 'offer' %}bi-gift-fill{% else %}bi-hand-index-thumb-fill{% endif %} me-1"></i>{{ post.post_type | upper }}
+            </span>
+            {% if post.urgency and post.urgency in ['urgent', 'high'] %}
+              <span class="badge-urgent text-uppercase">
+                <i class="bi bi-fire me-1"></i>{{ post.urgency }}
+              </span>
+            {% endif %}
+            <span class="badge bg-light text-secondary border small">{{ post.category }}</span>
           </div>
 
-          <!-- Type -->
-          <div class="col-6 col-md-2">
-            <label class="form-label small fw-semibold mb-1" for="filterType">Type</label>
-            <select id="filterType" name="type" class="form-select form-select-sm">
-              <option value="">All Types</option>
-              <option value="request" {{ 'selected' if selected_type == 'request' }}>Request</option>
-              <option value="offer"   {{ 'selected' if selected_type == 'offer'   }}>Offer</option>
-            </select>
-          </div>
-
-          <!-- Category -->
-          <div class="col-6 col-md-2">
-            <label class="form-label small fw-semibold mb-1" for="filterCat">Category</label>
-            <select id="filterCat" name="category" class="form-select form-select-sm">
-              <option value="">All Categories</option>
-              {% for cat in categories %}
-                <option value="{{ cat }}" {{ 'selected' if selected_category == cat }}>{{ cat }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <!-- Location -->
-          <div class="col-6 col-md-2">
-            <label class="form-label small fw-semibold mb-1" for="filterLoc">Location</label>
-            <input type="text" id="filterLoc" name="location" class="form-control form-control-sm"
-                   placeholder="e.g. Hyderabad" value="{{ location_filter }}"/>
-          </div>
-
-          <!-- Sort -->
-          <div class="col-6 col-md-2">
-            <label class="form-label small fw-semibold mb-1" for="filterSort">Sort By</label>
-            <select id="filterSort" name="sort" class="form-select form-select-sm">
-              <option value="newest" {{ 'selected' if sort_by == 'newest' }}>Newest First</option>
-              <option value="oldest" {{ 'selected' if sort_by == 'oldest' }}>Oldest First</option>
-              <option value="title"  {{ 'selected' if sort_by == 'title'  }}>Title (A-Z)</option>
-            </select>
-          </div>
-
-          <!-- Buttons -->
-          <div class="col-md-1 d-flex gap-1">
-            <button type="submit" class="btn btn-primary btn-sm w-100" title="Apply Filters">
-              <i class="bi bi-funnel"></i>
+          <!-- Watchlist Toggle -->
+          {% if session.get('user_id') %}
+          <form action="{{ url_for('posts.toggle_save_post', post_id=post.id) }}" method="POST" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn-bookmark {% if post.id in saved_post_ids %}saved{% endif %}" title="{% if post.id in saved_post_ids %}Remove from Saved{% else %}Save to Watchlist{% endif %}">
+              <i class="bi {% if post.id in saved_post_ids %}bi-bookmark-fill text-warning{% else %}bi-bookmark{% endif %}"></i>
             </button>
-            <a href="{{ url_for('posts.posts') }}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
-              <i class="bi bi-x-circle"></i>
+          </form>
+          {% endif %}
+        </div>
+
+        <!-- Post Title -->
+        <h5 class="fw-bold mb-2">
+          <a href="{{ url_for('posts.post_detail', post_id=post.id) }}" class="text-dark text-decoration-none">
+            {{ post.title }}
+          </a>
+        </h5>
+
+        <!-- Description -->
+        <p class="text-muted small flex-grow-1 mb-3">
+          {{ post.description[:110] }}{% if post.description|length > 110 %}...{% endif %}
+        </p>
+
+        <!-- Condition & Intent Chips -->
+        <div class="d-flex flex-wrap gap-1 mb-3">
+          {% if post.condition %}
+            <span class="badge-condition"><i class="bi bi-stars me-1"></i>{{ post.condition }}</span>
+          {% endif %}
+          {% if post.intent and post.intent != 'giveaway' %}
+            <span class="badge bg-info-subtle text-info-emphasis border small">
+              <i class="bi bi-recycle me-1"></i>{{ post.intent | replace('_', ' ') | capitalize }}
+            </span>
+          {% endif %}
+        </div>
+
+        <!-- Card Bottom Metadata -->
+        <div class="pt-2 border-top d-flex justify-content-between align-items-center small text-muted">
+          <div class="d-flex align-items-center gap-1">
+            <i class="bi bi-geo-alt text-primary"></i>
+            <span>{{ post.location }}</span>
+          </div>
+          <div class="d-flex align-items-center gap-1">
+            <a href="{{ url_for('auth.public_profile', user_id=post.user_id) }}" class="text-secondary text-decoration-none">
+              <i class="bi bi-person-circle"></i> {{ post.user_name }}
             </a>
           </div>
         </div>
-      </form>
-    </div>
 
-    <!-- Active Filter Summary & Result Count -->
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-      <p class="text-muted small mb-0">
-        Showing <strong>{{ posts | length }}</strong> of <strong>{{ pagination.total }}</strong> post{{ 's' if pagination.total != 1 else '' }}
-      </p>
-      {% if query_text or selected_type or selected_category or location_filter %}
-        <div class="small">
-          <span class="text-muted">Active filters:</span>
-          {% if selected_type %}<span class="badge bg-light text-dark border">{{ selected_type | capitalize }}</span>{% endif %}
-          {% if selected_category %}<span class="badge bg-light text-dark border">{{ selected_category }}</span>{% endif %}
-          {% if location_filter %}<span class="badge bg-light text-dark border">Location: {{ location_filter }}</span>{% endif %}
-          {% if query_text %}<span class="badge bg-light text-dark border">Query: {{ query_text }}</span>{% endif %}
-          <a href="{{ url_for('posts.posts') }}" class="text-danger ms-1 text-decoration-none small">&times; Reset</a>
-        </div>
-      {% endif %}
-    </div>
-
-    <!-- Posts Grid -->
-    {% if posts %}
-      <div class="row g-4">
-        {% for post in posts %}
-          <div class="col-md-6 col-lg-4">
-            <div class="card post-card border-0 shadow-sm h-100 d-flex flex-column">
-              <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                  <span class="badge {{ 'badge-offer' if post.post_type == 'offer' else 'badge-request' }}">
-                    <i class="bi {{ 'bi-gift-fill' if post.post_type == 'offer' else 'bi-hand-index-fill' }} me-1"></i>
-                    {{ post.post_type | capitalize }}
-                  </span>
-                  <div>
-                    <span class="badge bg-light text-dark border me-1">{{ post.category }}</span>
-                    {% if post.status == 'open' %}
-                      <span class="badge bg-success-subtle text-success border border-success-subtle">Open</span>
-                    {% elif post.status == 'in_progress' %}
-                      <span class="badge bg-warning-subtle text-warning border border-warning-subtle">In Progress</span>
-                    {% elif post.status == 'completed' %}
-                      <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Completed</span>
-                    {% else %}
-                      <span class="badge bg-secondary-subtle text-secondary border">Closed</span>
-                    {% endif %}
-                  </div>
-                </div>
-
-                <h5 class="card-title fw-bold mb-2">
-                  <a href="{{ url_for('posts.post_detail', post_id=post.id) }}" class="text-decoration-none text-dark">
-                    {{ post.title }}
-                  </a>
-                </h5>
-                <p class="card-text small text-muted">
-                  {{ post.description[:120] }}{% if post.description | length > 120 %}...{% endif %}
-                </p>
-              </div>
-
-              <div class="card-footer bg-transparent border-0 pt-0 pb-3 px-3 mt-auto">
-                <div class="d-flex justify-content-between small text-muted mb-2">
-                  <span><i class="bi bi-geo-alt text-primary me-1"></i>{{ post.location }}</span>
-                  <span><i class="bi bi-person me-1"></i>{{ post.user_name }}</span>
-                </div>
-                <div class="d-flex justify-content-between align-items-center">
-                  <span class="small text-muted">
-                    <i class="bi bi-clock me-1"></i>{{ post.created_at.strftime('%b %d, %Y') if post.created_at else '' }}
-                  </span>
-                  <div class="d-flex gap-1">
-                    <a href="{{ url_for('posts.post_detail', post_id=post.id) }}" class="btn btn-outline-primary btn-sm">
-                      Details
-                    </a>
-                    {% if session.get('user_id') == post.user_id or session.get('role') == 'admin' %}
-                      <a href="{{ url_for('posts.edit_post', post_id=post.id) }}" class="btn btn-outline-secondary btn-sm" title="Edit Post">
-                        <i class="bi bi-pencil"></i>
-                      </a>
-                    {% endif %}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        {% endfor %}
+        <a href="{{ url_for('posts.post_detail', post_id=post.id) }}" class="btn btn-outline-primary btn-sm w-100 mt-3 fw-semibold">
+          View Details &amp; Connect <i class="bi bi-arrow-right ms-1"></i>
+        </a>
       </div>
-
-      <!-- Pagination -->
-      {% if pagination.pages > 1 %}
-        <nav class="mt-5" aria-label="Posts pagination">
-          <ul class="pagination justify-content-center">
-            <li class="page-item {{ 'disabled' if not pagination.has_prev else '' }}">
-              <a class="page-link" href="{{ url_for('posts.posts', page=pagination.prev_num, type=selected_type, category=selected_category, location=location_filter, q=query_text, sort=sort_by) }}" aria-label="Previous">
-                &laquo; Prev
-              </a>
-            </li>
-            {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-              {% if p %}
-                <li class="page-item {{ 'active' if p == pagination.page else '' }}">
-                  <a class="page-link" href="{{ url_for('posts.posts', page=p, type=selected_type, category=selected_category, location=location_filter, q=query_text, sort=sort_by) }}">
-                    {{ p }}
-                  </a>
-                </li>
-              {% else %}
-                <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
-              {% endif %}
-            {% endfor %}
-            <li class="page-item {{ 'disabled' if not pagination.has_next else '' }}">
-              <a class="page-link" href="{{ url_for('posts.posts', page=pagination.next_num, type=selected_type, category=selected_category, location=location_filter, q=query_text, sort=sort_by) }}" aria-label="Next">
-                Next &raquo;
-              </a>
-            </li>
-          </ul>
-        </nav>
-      {% endif %}
-
-    {% else %}
-      <div class="text-center py-5 card border-0 p-4">
-        <i class="bi bi-inbox fs-1 text-muted"></i>
-        <h5 class="mt-2 fw-semibold">No posts found</h5>
-        <p class="text-muted small">Try broadening your search or resetting active filters.</p>
-        <div>
-          <a href="{{ url_for('posts.posts') }}" class="btn btn-outline-primary btn-sm">Clear All Filters</a>
-        </div>
-      </div>
-    {% endif %}
-
+    </div>
+    {% endfor %}
   </div>
-</section>
+
+  <!-- Pagination Controls -->
+  {% if pagination and pagination.pages > 1 %}
+  <nav class="mt-5" aria-label="Listings Page Navigation">
+    <ul class="pagination justify-content-center">
+      {% if pagination.has_prev %}
+      <li class="page-item">
+        <a class="page-link" href="{{ url_for('posts.posts', page=pagination.prev_num, type=selected_type, category=selected_category, urgency=selected_urgency, condition=selected_condition, q=query_text, sort=sort_by) }}">
+          &laquo; Previous
+        </a>
+      </li>
+      {% else %}
+      <li class="page-item disabled"><span class="page-link">&laquo; Previous</span></li>
+      {% endif %}
+
+      {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if page_num %}
+          <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('posts.posts', page=page_num, type=selected_type, category=selected_category, urgency=selected_urgency, condition=selected_condition, q=query_text, sort=sort_by) }}">
+              {{ page_num }}
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+        {% endif %}
+      {% endfor %}
+
+      {% if pagination.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="{{ url_for('posts.posts', page=pagination.next_num, type=selected_type, category=selected_category, urgency=selected_urgency, condition=selected_condition, q=query_text, sort=sort_by) }}">
+          Next &raquo;
+        </a>
+      </li>
+      {% else %}
+      <li class="page-item disabled"><span class="page-link">Next &raquo;</span></li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <!-- Empty State -->
+  <div class="empty-state my-4">
+    <div class="empty-state-icon"><i class="bi bi-search"></i></div>
+    <h4 class="fw-bold">No matching listings found</h4>
+    <p class="text-muted small max-w-sm mx-auto mb-3" style="max-width: 460px;">
+      We couldn't find any listings matching your current search criteria. Try broadening your filters, or post a request so neighbors can help!
+    </p>
+    <div class="d-flex justify-content-center gap-2">
+      <a href="{{ url_for('posts.posts') }}" class="btn btn-outline-secondary btn-sm">Clear All Filters</a>
+      {% if session.get('user_id') %}
+      <a href="{{ url_for('posts.new_post') }}" class="btn btn-primary btn-sm">Publish a Request</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
 {% endblock %}

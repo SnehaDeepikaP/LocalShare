@@ -1,255 +1,251 @@
 {% extends "base.html" %}
-{% block title %}LocalShare — Community Resource Sharing &amp; Mutual Aid{% endblock %}
+
+{% block title %}LocalShare — Share Items, Skills &amp; Support Your Neighborhood{% endblock %}
 
 {% block content %}
-
 <!-- Hero Section -->
-<section class="hero-section text-center py-5">
-  <div class="container py-4">
-    <div class="row justify-content-center">
-      <div class="col-lg-8">
-        <span class="badge bg-white text-primary px-3 py-2 rounded-pill fw-semibold mb-3 shadow-sm">
-          <i class="bi bi-heart-fill text-danger me-1"></i> Community-Driven Resource Sharing
+<section class="hero-v3">
+  <div class="container position-relative" style="z-index: 2;">
+    <div class="row align-items-center justify-content-center text-center">
+      <div class="col-lg-9 col-xl-8">
+        <span class="badge bg-warning text-dark fw-bold px-3 py-2 rounded-pill mb-3 shadow-sm">
+          <i class="bi bi-geo-alt-fill me-1"></i> Hyperlocal Mutual Aid &bull; Neighborhood Resource Sharing
         </span>
-        <h1 class="display-4 fw-bold mb-3">Share Resources. Help Neighbours. Build Community.</h1>
-        <p class="lead mb-4 opacity-90">
-          Connect safely with nearby residents to share household items, books, clothing, food donations, or volunteer skills. 100% non-monetary community mutual aid.
+        <h1 class="display-4 fw-extrabold text-white mb-3" style="letter-spacing: -0.03em;">
+          Borrow what you need.<br/>Share what you have.
+        </h1>
+        <p class="lead text-white-50 mb-4 px-md-4">
+          Connect safely with neighbors to lend household tools, pass along textbooks, share surplus food, and offer hands-on skills — without spending a rupee.
         </p>
 
-        <!-- Quick Search Bar -->
-        <form action="{{ url_for('posts.posts') }}" method="GET" class="card p-2 shadow-lg border-0 mb-4 bg-white text-dark">
-          <div class="input-group">
-            <span class="input-group-text bg-transparent border-0"><i class="bi bi-search text-primary"></i></span>
-            <input type="text" name="q" class="form-control border-0 shadow-none" placeholder="Search for books, clothes, food, or services..."/>
-            <button class="btn btn-primary px-4 fw-semibold rounded" type="submit">Search</button>
-          </div>
-        </form>
+        <!-- Search Bar in Hero -->
+        <div class="hero-search-box mb-4 mx-auto" style="max-width: 680px;">
+          <form action="{{ url_for('posts.posts') }}" method="GET" class="d-flex align-items-center gap-2">
+            <i class="bi bi-search text-muted fs-5 ms-2"></i>
+            <input type="text" name="q" class="form-control hero-search-input" placeholder="Search for tools, textbooks, winter clothes, rice, repair help..." aria-label="Search listings">
+            <button type="submit" class="btn btn-primary px-4 fw-bold text-nowrap">
+              Find Nearby
+            </button>
+          </form>
+        </div>
 
-        <div class="d-flex justify-content-center gap-3 flex-wrap">
-          <a href="{{ url_for('posts.posts') }}" class="btn btn-light btn-lg px-4 shadow-sm">
-            <i class="bi bi-grid me-2"></i>Browse All Posts
+        <!-- Quick Category Discovery Pills -->
+        <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
+          <span class="text-white-50 small align-self-center me-1">Popular:</span>
+          <a href="{{ url_for('posts.posts', category='Books') }}" class="category-pill">
+            <i class="bi bi-book text-primary"></i> Books &amp; Study
           </a>
-          {% if session.get('user_id') %}
-            <a href="{{ url_for('posts.new_post') }}" class="btn btn-accent btn-lg px-4 shadow-sm">
-              <i class="bi bi-plus-circle me-2"></i>Create a Post
-            </a>
-          {% else %}
-            <a href="{{ url_for('auth.register') }}" class="btn btn-accent btn-lg px-4 shadow-sm">
-              <i class="bi bi-person-plus me-2"></i>Join LocalShare
-            </a>
-          {% endif %}
+          <a href="{{ url_for('posts.posts', category='Tools') }}" class="category-pill">
+            <i class="bi bi-tools text-warning"></i> Tools &amp; DIY
+          </a>
+          <a href="{{ url_for('posts.posts', category='Food') }}" class="category-pill">
+            <i class="bi bi-egg-fried text-success"></i> Food &amp; Pantry
+          </a>
+          <a href="{{ url_for('posts.posts', category='Clothes') }}" class="category-pill">
+            <i class="bi bi-tag text-danger"></i> Clothes
+          </a>
+          <a href="{{ url_for('posts.posts', category='Services') }}" class="category-pill">
+            <i class="bi bi-heart text-info"></i> Skill Exchange
+          </a>
+        </div>
+
+        <div class="d-flex justify-content-center gap-3">
+          <a href="{{ url_for('posts.posts') }}" class="btn btn-light btn-lg px-4 fw-bold shadow">
+            <i class="bi bi-grid me-2"></i>Explore All Listings
+          </a>
+          <a href="{{ url_for('posts.new_post') }}" class="btn btn-accent btn-lg px-4 fw-bold shadow">
+            <i class="bi bi-plus-circle me-2"></i>Offer or Request
+          </a>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Verified Impact Stats Strip -->
-<section class="py-4 bg-white border-bottom shadow-sm">
+<!-- 3 Practical Answers Section -->
+<section class="py-5 bg-white border-bottom">
   <div class="container">
-    <div class="row text-center g-3">
-      <div class="col-6 col-md-3">
-        <div class="stat-card p-3 rounded">
-          <div class="stat-number">{{ stats['members_count'] }}</div>
-          <div class="small text-muted fw-semibold"><i class="bi bi-people me-1"></i>Community Members</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="stat-card p-3 rounded">
-          <div class="stat-number">{{ stats['active_posts_count'] }}</div>
-          <div class="small text-muted fw-semibold"><i class="bi bi-megaphone me-1"></i>Active Posts</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="stat-card p-3 rounded">
-          <div class="stat-number text-success">{{ stats['offers_count'] }}</div>
-          <div class="small text-muted fw-semibold"><i class="bi bi-gift me-1"></i>Available Offers</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="stat-card p-3 rounded">
-          <div class="stat-number text-primary">{{ stats['completed_exchanges_count'] }}</div>
-          <div class="small text-muted fw-semibold"><i class="bi bi-check-circle me-1"></i>Exchanges Completed</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Smart Matching Feature Spotlight -->
-<section class="py-5 bg-light border-bottom">
-  <div class="container">
-    <div class="card border-0 shadow-sm p-4 p-md-5 bg-gradient-light">
-      <div class="row align-items-center g-4">
-        <div class="col-lg-7">
-          <span class="badge bg-primary text-white mb-2 px-3 py-1 rounded-pill">Smart Feature</span>
-          <h2 class="fw-bold mb-3">Transparent &amp; Explainable Matching</h2>
-          <p class="text-muted mb-4">
-            Our deterministic local algorithm automatically pairs people needing assistance with relevant nearby offers. It evaluates complementary types, category relevance, text keyword overlap, and location proximity — with complete transparency on why each item was recommended.
-          </p>
-          <div class="d-flex gap-3 flex-wrap">
-            {% if session.get('user_id') %}
-              <a href="{{ url_for('matching.matches_dashboard') }}" class="btn btn-outline-primary fw-semibold">
-                <i class="bi bi-stars me-1"></i>View Your Matches
-              </a>
-            {% else %}
-              <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary fw-semibold">
-                <i class="bi bi-person-plus me-1"></i>Sign Up to Match
-              </a>
-            {% endif %}
-            <a href="{{ url_for('main.impact') }}" class="btn btn-link text-decoration-none">
-              Explore Community Impact <i class="bi bi-arrow-right"></i>
-            </a>
-          </div>
-        </div>
-        <div class="col-lg-5">
-          <div class="card border-0 shadow-sm p-3 bg-white">
-            <h6 class="fw-bold text-dark mb-2"><i class="bi bi-sliders me-1 text-primary"></i>Scoring Breakdown Model</h6>
-            <div class="mb-2">
-              <div class="d-flex justify-content-between small text-muted">
-                <span>Complementary Type (Offer &harr; Request)</span>
-                <strong>40%</strong>
-              </div>
-              <div class="progress" style="height: 6px;">
-                <div class="progress-bar bg-primary" style="width: 40%"></div>
-              </div>
-            </div>
-            <div class="mb-2">
-              <div class="d-flex justify-content-between small text-muted">
-                <span>Category Exact Match</span>
-                <strong>30%</strong>
-              </div>
-              <div class="progress" style="height: 6px;">
-                <div class="progress-bar bg-success" style="width: 30%"></div>
-              </div>
-            </div>
-            <div class="mb-2">
-              <div class="d-flex justify-content-between small text-muted">
-                <span>Keyword &amp; Resource Overlap</span>
-                <strong>20%</strong>
-              </div>
-              <div class="progress" style="height: 6px;">
-                <div class="progress-bar bg-info" style="width: 20%"></div>
-              </div>
-            </div>
-            <div>
-              <div class="d-flex justify-content-between small text-muted">
-                <span>Geographic Proximity</span>
-                <strong>10%</strong>
-              </div>
-              <div class="progress" style="height: 6px;">
-                <div class="progress-bar bg-warning" style="width: 10%"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- How It Works -->
-<section class="py-5">
-  <div class="container">
-    <div class="text-center mb-5">
-      <h2 class="fw-bold">How LocalShare Works</h2>
-      <p class="text-muted">A simple, safe 4-step workflow to exchange resources locally</p>
-    </div>
     <div class="row g-4 text-center">
-      <div class="col-md-3">
-        <div class="how-card p-4 rounded h-100">
-          <div class="how-icon mb-3"><i class="bi bi-person-check-fill"></i></div>
-          <h5 class="fw-bold">1. Join</h5>
-          <p class="text-muted small mb-0">Create an account and set your general neighbourhood or town.</p>
+      <div class="col-md-4">
+        <div class="p-3">
+          <div class="d-inline-flex p-3 rounded-circle mb-3" style="background-color: #ecfdf5; color: #059669;">
+            <i class="bi bi-search-heart fs-2"></i>
+          </div>
+          <h5 class="fw-bold">1. What can I find here?</h5>
+          <p class="text-muted small mb-0">
+            Household goods, study materials, appliances to borrow, food donations, and repair assistance offered freely by verified community members.
+          </p>
         </div>
       </div>
-      <div class="col-md-3">
-        <div class="how-card p-4 rounded h-100">
-          <div class="how-icon mb-3"><i class="bi bi-pencil-square"></i></div>
-          <h5 class="fw-bold">2. Post or Browse</h5>
-          <p class="text-muted small mb-0">Offer excess items or request needed community resources.</p>
+      <div class="col-md-4">
+        <div class="p-3">
+          <div class="d-inline-flex p-3 rounded-circle mb-3" style="background-color: #fffbeb; color: #d97706;">
+            <i class="bi bi-gift fs-2"></i>
+          </div>
+          <h5 class="fw-bold">2. How can I help someone?</h5>
+          <p class="text-muted small mb-0">
+            Publish an offer for usable items sitting idle or respond to an urgent neighbor request. Clear clutter while preventing landfill waste.
+          </p>
         </div>
       </div>
-      <div class="col-md-3">
-        <div class="how-card p-4 rounded h-100">
-          <div class="how-icon mb-3"><i class="bi bi-chat-heart-fill"></i></div>
-          <h5 class="fw-bold">3. Connect</h5>
-          <p class="text-muted small mb-0">Send an interest request with safe, private coordination details.</p>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="how-card p-4 rounded h-100">
-          <div class="how-icon mb-3"><i class="bi bi-check2-circle"></i></div>
-          <h5 class="fw-bold">4. Complete</h5>
-          <p class="text-muted small mb-0">Confirm the handover and celebrate community impact.</p>
+      <div class="col-md-4">
+        <div class="p-3">
+          <div class="d-inline-flex p-3 rounded-circle mb-3" style="background-color: #f0fdfa; color: #0f766e;">
+            <i class="bi bi-shield-lock fs-2"></i>
+          </div>
+          <h5 class="fw-bold">3. How do I connect safely?</h5>
+          <p class="text-muted small mb-0">
+            Express interest with one click. Coordinate privately through encrypted in-app message threads without disclosing personal phone numbers or exact addresses.
+          </p>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Recent Community Posts -->
-<section class="py-5 bg-light">
+<!-- Featured Recent Listings (Live Database) -->
+<section class="py-5" style="background-color: #f8fafc;">
   <div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-2">
       <div>
-        <h2 class="fw-bold mb-1">Recent Community Posts</h2>
-        <p class="text-muted small mb-0">Latest offers and requests from nearby community members</p>
+        <h2 class="h3 fw-bold mb-1">Live Neighborhood Listings</h2>
+        <p class="text-muted small mb-0">Recent offers and urgent requests active in your local area.</p>
       </div>
-      <a href="{{ url_for('posts.posts') }}" class="btn btn-outline-primary btn-sm">
-        View All Posts <i class="bi bi-arrow-right"></i>
-      </a>
+      <div class="d-flex gap-2">
+        <a href="{{ url_for('posts.posts', type='offer') }}" class="btn btn-outline-primary btn-sm px-3">
+          <i class="bi bi-gift me-1"></i>View Offers ({{ stats.offers_count }})
+        </a>
+        <a href="{{ url_for('posts.posts', type='request') }}" class="btn btn-outline-secondary btn-sm px-3">
+          <i class="bi bi-hand-index-thumb me-1"></i>View Requests ({{ stats.requests_count }})
+        </a>
+      </div>
     </div>
 
     {% if recent_posts %}
-      <div class="row g-4">
-        {% for post in recent_posts %}
-          <div class="col-md-6 col-lg-4">
-            <div class="card post-card h-100 border-0 shadow-sm d-flex flex-column">
-              <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                  <span class="badge {{ 'badge-offer' if post.post_type == 'offer' else 'badge-request' }}">
-                    <i class="bi {{ 'bi-gift-fill' if post.post_type == 'offer' else 'bi-hand-index-fill' }} me-1"></i>
-                    {{ post.post_type | capitalize }}
-                  </span>
-                  <span class="badge bg-light text-dark border">{{ post.category }}</span>
-                </div>
-                <h5 class="card-title fw-bold mb-2">
-                  <a href="{{ url_for('posts.post_detail', post_id=post.id) }}" class="text-decoration-none text-dark">
-                    {{ post.title }}
-                  </a>
-                </h5>
-                <p class="card-text small text-muted">
-                  {{ post.description[:110] }}{% if post.description | length > 110 %}...{% endif %}
-                </p>
-              </div>
-              <div class="card-footer bg-transparent border-0 pt-0 pb-3 px-3">
-                <div class="d-flex justify-content-between small text-muted mb-2">
-                  <span><i class="bi bi-geo-alt text-primary me-1"></i>{{ post.location }}</span>
-                  <span><i class="bi bi-person me-1"></i>{{ post.user_name }}</span>
-                </div>
-                <div class="d-flex justify-content-between align-items-center">
-                  <span class="small text-muted"><i class="bi bi-clock me-1"></i>{{ post.created_at.strftime('%b %d, %Y') if post.created_at else '' }}</span>
-                  <a href="{{ url_for('posts.post_detail', post_id=post.id) }}" class="btn btn-sm btn-outline-primary">
-                    Details &rarr;
-                  </a>
-                </div>
-              </div>
+    <div class="row g-4">
+      {% for post in recent_posts %}
+      <div class="col-lg-4 col-md-6">
+        <div class="card card-modern h-100 p-3 d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <span class="{% if post.post_type == 'offer' %}badge-offer{% else %}badge-request{% endif %}">
+              <i class="bi {% if post.post_type == 'offer' %}bi-gift-fill{% else %}bi-hand-index-thumb-fill{% endif %} me-1"></i>{{ post.post_type | upper }}
+            </span>
+            <div class="d-flex align-items-center gap-1">
+              {% if post.urgency and post.urgency in ['urgent', 'high'] %}
+                <span class="badge-urgent text-uppercase" style="font-size: 0.65rem;">
+                  <i class="bi bi-fire me-1"></i>{{ post.urgency }}
+                </span>
+              {% endif %}
+              <span class="badge bg-light text-secondary border small">{{ post.category }}</span>
             </div>
           </div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <div class="text-center py-5 text-muted card border-0 p-4">
-        <i class="bi bi-inbox fs-1"></i>
-        <h5 class="mt-2 fw-semibold">No active posts yet</h5>
-        <p class="small text-muted">Be the first to share an offer or request assistance in your local area!</p>
-        <div>
-          <a href="{{ url_for('posts.new_post') }}" class="btn btn-primary btn-sm">Create First Post</a>
+
+          <h5 class="fw-bold mb-2">
+            <a href="{{ url_for('posts.post_detail', post_id=post.id) }}" class="text-dark stretched-link text-decoration-none">
+              {{ post.title }}
+            </a>
+          </h5>
+          <p class="text-muted small flex-grow-1 mb-3">
+            {{ post.description[:110] }}{% if post.description|length > 110 %}...{% endif %}
+          </p>
+
+          <div class="pt-2 border-top d-flex justify-content-between align-items-center small text-muted">
+            <div class="d-flex align-items-center gap-1">
+              <i class="bi bi-geo-alt text-primary"></i>
+              <span>{{ post.location }}</span>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+              <i class="bi bi-person text-secondary"></i>
+              <span>{{ post.user_name }}</span>
+            </div>
+          </div>
         </div>
       </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-inbox empty-state-icon"></i>
+      <h5 class="fw-bold">No active listings yet</h5>
+      <p class="text-muted small">Be the first to share an item or post a request in your community!</p>
+      <a href="{{ url_for('posts.new_post') }}" class="btn btn-primary btn-sm">Create First Post</a>
+    </div>
     {% endif %}
+
+    <div class="text-center mt-4">
+      <a href="{{ url_for('posts.posts') }}" class="btn btn-outline-primary px-4 fw-bold">
+        Browse All {{ stats.active_posts_count }} Active Listings <i class="bi bi-arrow-right ms-1"></i>
+      </a>
+    </div>
   </div>
 </section>
 
+<!-- Real Verified Impact Metrics -->
+<section class="py-5 bg-white border-top border-bottom">
+  <div class="container">
+    <div class="text-center max-w-xl mx-auto mb-5">
+      <span class="text-uppercase text-primary fw-bold small letter-spacing-1">Real-Time Community Records</span>
+      <h2 class="h3 fw-bold mt-1">Our Verified Neighborhood Footprint</h2>
+      <p class="text-muted small">All statistics are directly aggregated from verified database transactions.</p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-3 col-6">
+        <div class="stat-box-modern">
+          <div class="stat-box-value">{{ stats.members_count }}</div>
+          <div class="stat-box-label">Verified Neighbors</div>
+          <div class="text-success small mt-1"><i class="bi bi-shield-check me-1"></i>Active accounts</div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-6">
+        <div class="stat-box-modern">
+          <div class="stat-box-value">{{ stats.active_posts_count }}</div>
+          <div class="stat-box-label">Active Listings</div>
+          <div class="text-primary small mt-1"><i class="bi bi-arrow-repeat me-1"></i>Offers &amp; Requests</div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-6">
+        <div class="stat-box-modern">
+          <div class="stat-box-value" style="color: #059669;">{{ stats.completed_exchanges_count }}</div>
+          <div class="stat-box-label">Completed Handovers</div>
+          <div class="text-success small mt-1"><i class="bi bi-check2-circle me-1"></i>Mutually verified</div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-6">
+        <div class="stat-box-modern">
+          <div class="stat-box-value" style="color: #d97706;">{{ stats.estimated_waste_diverted_kg }} kg</div>
+          <div class="stat-box-label">Estimated Waste Diverted</div>
+          <div class="text-warning small mt-1"><i class="bi bi-recycle me-1"></i>Reuse &amp; repair savings</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Call to Action Banner -->
+<section class="py-5" style="background: linear-gradient(135deg, #0f766e 0%, #115e59 100%); color: #fff;">
+  <div class="container text-center">
+    <h2 class="display-6 fw-bold mb-3">Ready to give back to your neighborhood?</h2>
+    <p class="lead text-white-50 max-w-lg mx-auto mb-4" style="max-width: 600px;">
+      Join hundreds of students and neighbors sharing books, tools, surplus goods, and everyday assistance.
+    </p>
+    <div class="d-flex justify-content-center gap-3">
+      {% if session.get('user_id') %}
+        <a href="{{ url_for('posts.new_post') }}" class="btn btn-warning btn-lg px-4 fw-bold shadow">
+          <i class="bi bi-plus-lg me-1"></i>Publish a Listing
+        </a>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-light btn-lg px-4 fw-bold">
+          Go to Dashboard
+        </a>
+      {% else %}
+        <a href="{{ url_for('auth.register') }}" class="btn btn-warning btn-lg px-4 fw-bold shadow">
+          Create Free Account
+        </a>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light btn-lg px-4 fw-bold">
+          Log In
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</section>
 {% endblock %}

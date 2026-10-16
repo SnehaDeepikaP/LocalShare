@@ -1,428 +1,295 @@
 {% extends "base.html" %}
+
 {% block title %}My Dashboard — LocalShare{% endblock %}
 
 {% block content %}
-<section class="py-5">
-  <div class="container">
-
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-      <div>
-        <h2 class="fw-bold mb-1">Welcome, {{ user.name }}</h2>
-        <p class="text-muted small mb-0"><i class="bi bi-geo-alt me-1"></i>{{ user.location }} &middot; Member since {{ user.created_at.strftime('%B %Y') if user.created_at else '' }}</p>
+<div class="container py-4">
+  <!-- Dashboard Top Header Card -->
+  <div class="card card-modern p-4 mb-4">
+    <div class="row align-items-center">
+      <div class="col-md-auto text-center text-md-start mb-3 mb-md-0">
+        {% if user.avatar_url %}
+          <img src="{{ user.avatar_url }}" alt="{{ user.name }}" class="rounded-circle border shadow-sm" width="72" height="72" style="object-fit: cover;">
+        {% else %}
+          <div class="rounded-circle bg-teal-subtle text-success d-inline-flex align-items-center justify-content-center fw-bold fs-2 shadow-sm" style="width: 72px; height: 72px; background-color: #f0fdfa;">
+            {{ user.name[0] | upper }}
+          </div>
+        {% endif %}
       </div>
-      <div class="d-flex gap-2">
-        <a href="{{ url_for('posts.new_post') }}" class="btn btn-accent btn-sm shadow-sm">
-          <i class="bi bi-plus-circle me-1"></i>New Post
+      <div class="col-md">
+        <h2 class="h4 fw-bold mb-1">{{ user.name }}'s Activity Center</h2>
+        <p class="text-muted small mb-0">
+          <i class="bi bi-geo-alt text-primary me-1"></i>{{ user.location }} &bull;
+          <span class="badge bg-success-subtle text-success border border-success-subtle ms-1">
+            <i class="bi bi-patch-check-fill me-1"></i>{{ user.reputation.label }}
+          </span>
+          <span class="ms-2 text-muted">
+            <i class="bi bi-star-fill text-warning me-1"></i>{{ user.reputation.average }} ({{ user.reputation.count }} reviews)
+          </span>
+        </p>
+      </div>
+      <div class="col-md-auto mt-3 mt-md-0 d-flex gap-2">
+        <a href="{{ url_for('posts.new_post') }}" class="btn btn-primary btn-sm shadow-sm">
+          <i class="bi bi-plus-lg me-1"></i>Post Listing
         </a>
         <a href="{{ url_for('auth.profile') }}" class="btn btn-outline-secondary btn-sm">
-          <i class="bi bi-gear me-1"></i>Edit Profile
+          <i class="bi bi-gear me-1"></i>Account Settings
         </a>
       </div>
     </div>
-
-    <!-- Quick Stats Cards -->
-    <div class="row g-3 mb-4">
-      <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm p-3 text-center bg-white">
-          <div class="h3 fw-bold text-primary mb-0">{{ my_posts | length }}</div>
-          <div class="small text-muted">My Posts</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm p-3 text-center bg-white">
-          <div class="h3 fw-bold text-warning mb-0">
-            {{ incoming_requests | selectattr('status', 'equalto', 'pending') | list | length }}
-          </div>
-          <div class="small text-muted">Pending Inquiries</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm p-3 text-center bg-white">
-          <div class="h3 fw-bold text-success mb-0">
-            {{ outgoing_requests | selectattr('status', 'equalto', 'accepted') | list | length }}
-          </div>
-          <div class="small text-muted">Accepted Exchanges</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm p-3 text-center bg-white">
-          <div class="h3 fw-bold text-info mb-0">{{ matches | length }}</div>
-          <div class="small text-muted">Smart Matches</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Nav Tabs -->
-    <ul class="nav nav-pills mb-4 border-bottom pb-2 gap-2" id="dashboardTabs" role="tablist">
-      <li class="nav-item" role="presentation">
-        <button class="nav-link active fw-semibold" id="posts-tab" data-bs-toggle="tab" data-bs-target="#posts-pane" type="button" role="tab" aria-selected="true">
-          <i class="bi bi-card-list me-1"></i>My Posts ({{ my_posts | length }})
-        </button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link fw-semibold" id="incoming-tab" data-bs-toggle="tab" data-bs-target="#incoming-pane" type="button" role="tab" aria-selected="false">
-          <i class="bi bi-inbox-fill me-1"></i>Incoming Requests
-          {% set pending_inc = incoming_requests | selectattr('status', 'equalto', 'pending') | list | length %}
-          {% if pending_inc > 0 %}
-            <span class="badge bg-danger ms-1">{{ pending_inc }}</span>
-          {% endif %}
-        </button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link fw-semibold" id="outgoing-tab" data-bs-toggle="tab" data-bs-target="#outgoing-pane" type="button" role="tab" aria-selected="false">
-          <i class="bi bi-send-fill me-1"></i>My Sent Requests ({{ outgoing_requests | length }})
-        </button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link fw-semibold" id="matches-tab" data-bs-toggle="tab" data-bs-target="#matches-pane" type="button" role="tab" aria-selected="false">
-          <i class="bi bi-stars text-warning me-1"></i>Recommended Matches ({{ matches | length }})
-        </button>
-      </li>
-    </ul>
-
-    <!-- Tab Content Panes -->
-    <div class="tab-content" id="dashboardTabContent">
-      
-      <!-- TAB 1: My Posts -->
-      <div class="tab-pane fade show active" id="posts-pane" role="tabpanel" tabindex="0">
-        {% if my_posts %}
-          <div class="table-responsive bg-white rounded shadow-sm p-3">
-            <table class="table table-hover align-middle mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th>Title</th>
-                  <th>Type</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                  <th class="text-end">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for p in my_posts %}
-                  <tr>
-                    <td>
-                      <a href="{{ url_for('posts.post_detail', post_id=p.id) }}" class="fw-semibold text-dark text-decoration-none">
-                        {{ p.title }}
-                      </a>
-                    </td>
-                    <td>
-                      <span class="badge {{ 'badge-offer' if p.post_type == 'offer' else 'badge-request' }}">
-                        {{ p.post_type | capitalize }}
-                      </span>
-                    </td>
-                    <td><span class="badge bg-light text-dark border">{{ p.category }}</span></td>
-                    <td>
-                      {% if p.status == 'open' %}
-                        <span class="badge bg-success-subtle text-success border border-success-subtle">Open</span>
-                      {% elif p.status == 'in_progress' %}
-                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">In Progress</span>
-                      {% elif p.status == 'completed' %}
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Completed</span>
-                      {% else %}
-                        <span class="badge bg-secondary-subtle text-secondary border">Closed</span>
-                      {% endif %}
-                    </td>
-                    <td class="small text-muted">{{ p.created_at.strftime('%b %d, %Y') if p.created_at else '' }}</td>
-                    <td class="text-end">
-                      <div class="d-flex justify-content-end gap-1">
-                        <a href="{{ url_for('posts.post_detail', post_id=p.id) }}" class="btn btn-outline-primary btn-sm" title="View Details">
-                          <i class="bi bi-eye"></i>
-                        </a>
-                        <a href="{{ url_for('posts.edit_post', post_id=p.id) }}" class="btn btn-outline-secondary btn-sm" title="Edit">
-                          <i class="bi bi-pencil"></i>
-                        </a>
-                        {% if p.status == 'open' %}
-                          <form method="POST" action="{{ url_for('posts.update_status', post_id=p.id) }}" class="d-inline">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                            <input type="hidden" name="status" value="closed"/>
-                            <button type="submit" class="btn btn-outline-warning btn-sm" title="Close Post">
-                              <i class="bi bi-lock"></i>
-                            </button>
-                          </form>
-                        {% else %}
-                          <form method="POST" action="{{ url_for('posts.update_status', post_id=p.id) }}" class="d-inline">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                            <input type="hidden" name="status" value="open"/>
-                            <button type="submit" class="btn btn-outline-success btn-sm" title="Reopen Post">
-                              <i class="bi bi-unlock"></i>
-                            </button>
-                          </form>
-                        {% endif %}
-                      </div>
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        {% else %}
-          <div class="text-center py-5 card border-0 p-4 bg-white">
-            <i class="bi bi-pencil-square fs-1 text-muted"></i>
-            <h5 class="mt-2 fw-semibold">You haven't posted anything yet</h5>
-            <p class="text-muted small">Share what you need or what you have to offer with your local neighbours.</p>
-            <div>
-              <a href="{{ url_for('posts.new_post') }}" class="btn btn-primary btn-sm">Create First Post</a>
-            </div>
-          </div>
-        {% endif %}
-      </div>
-
-      <!-- TAB 2: Incoming Requests -->
-      <div class="tab-pane fade" id="incoming-pane" role="tabpanel" tabindex="0">
-        {% if incoming_requests %}
-          <div class="row g-3">
-            {% for req in incoming_requests %}
-              <div class="col-md-6">
-                <div class="card border-0 shadow-sm p-3 h-100 bg-white">
-                  <div class="d-flex justify-content-between align-items-start mb-2">
-                    <span class="badge {{ 'bg-success' if req.status == 'accepted' else 'bg-warning text-dark' if req.status == 'pending' else 'bg-secondary' }}">
-                      {{ req.status | capitalize }}
-                    </span>
-                    <span class="small text-muted">{{ req.created_at.strftime('%b %d, %Y') if req.created_at else '' }}</span>
-                  </div>
-
-                  <h6 class="fw-bold mb-1">
-                    Regarding: <a href="{{ url_for('posts.post_detail', post_id=req.post.id) }}" class="text-decoration-none">{{ req.post.title }}</a>
-                  </h6>
-                  <p class="small text-muted mb-2">From: <strong>{{ req.requester.name }}</strong> ({{ req.requester.location }})</p>
-
-                  <div class="p-2 bg-light rounded small mb-3">
-                    <strong>Message:</strong> {{ req.message }}
-                  </div>
-
-                  {% if req.status == 'accepted' and req.contact_info %}
-                    <div class="p-2 bg-success-subtle rounded small mb-3 text-success-emphasis">
-                      <i class="bi bi-telephone me-1"></i><strong>Contact Info:</strong> {{ req.contact_info }}
-                    </div>
-                  {% endif %}
-
-                  {% if req.response_note %}
-                    <div class="p-2 bg-light border rounded small mb-3 text-secondary">
-                      <strong>Your Note:</strong> {{ req.response_note }}
-                    </div>
-                  {% endif %}
-
-                  <div class="mt-auto d-flex gap-2">
-                    {% if req.status == 'pending' %}
-                      <!-- Accept Button & Modal trigger -->
-                      <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#acceptModal{{ req.id }}">
-                        <i class="bi bi-check-circle me-1"></i>Accept
-                      </button>
-                      <!-- Decline Button & Modal trigger -->
-                      <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#declineModal{{ req.id }}">
-                        <i class="bi bi-x-circle me-1"></i>Decline
-                      </button>
-                    {% elif req.status == 'accepted' %}
-                      <form method="POST" action="{{ url_for('exchange.complete_exchange', request_id=req.id) }}" class="w-100">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        <button type="submit" class="btn btn-outline-success btn-sm w-100" onclick="return confirm('Confirm that this exchange has been completed?');">
-                          <i class="bi bi-check2-all me-1"></i>Mark Exchange Completed
-                        </button>
-                      </form>
-                    {% endif %}
-                  </div>
-                </div>
-              </div>
-
-              <!-- Accept Modal -->
-              <div class="modal fade" id="acceptModal{{ req.id }}" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog">
-                  <div class="modal-content">
-                    <form method="POST" action="{{ url_for('exchange.respond_request', request_id=req.id) }}">
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                      <input type="hidden" name="action" value="accept"/>
-                      <div class="modal-header">
-                        <h5 class="modal-title fw-bold">Accept Request from {{ req.requester.name }}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                      </div>
-                      <div class="modal-body">
-                        <p class="small text-muted">
-                          Accepting this request will let {{ req.requester.name }} know you want to proceed and allow coordination.
-                        </p>
-                        <div class="mb-3">
-                          <label class="form-label small fw-semibold">Note / Coordination Details (Optional)</label>
-                          <textarea name="response_note" class="form-control form-control-sm" rows="3"
-                                    placeholder="e.g. Great! I am available on Saturday at the community center."></textarea>
-                        </div>
-                      </div>
-                      <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success btn-sm">Confirm &amp; Accept</button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Decline Modal -->
-              <div class="modal fade" id="declineModal{{ req.id }}" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog">
-                  <div class="modal-content">
-                    <form method="POST" action="{{ url_for('exchange.respond_request', request_id=req.id) }}">
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                      <input type="hidden" name="action" value="decline"/>
-                      <div class="modal-header">
-                        <h5 class="modal-title fw-bold">Decline Request</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                      </div>
-                      <div class="modal-body">
-                        <div class="mb-3">
-                          <label class="form-label small fw-semibold">Reason / Note (Optional)</label>
-                          <input type="text" name="response_note" class="form-control form-control-sm"
-                                 placeholder="e.g. Item already shared with another neighbour."/>
-                        </div>
-                      </div>
-                      <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-danger btn-sm">Decline Request</button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              </div>
-
-            {% endfor %}
-          </div>
-        {% else %}
-          <div class="text-center py-5 card border-0 p-4 bg-white">
-            <i class="bi bi-inbox fs-1 text-muted"></i>
-            <h5 class="mt-2 fw-semibold">No incoming requests</h5>
-            <p class="text-muted small">When other users express interest in your posts, they will show up here.</p>
-          </div>
-        {% endif %}
-      </div>
-
-      <!-- TAB 3: Outgoing Requests -->
-      <div class="tab-pane fade" id="outgoing-pane" role="tabpanel" tabindex="0">
-        {% if outgoing_requests %}
-          <div class="row g-3">
-            {% for req in outgoing_requests %}
-              <div class="col-md-6">
-                <div class="card border-0 shadow-sm p-3 h-100 bg-white">
-                  <div class="d-flex justify-content-between align-items-start mb-2">
-                    <span class="badge {{ 'bg-success' if req.status == 'accepted' else 'bg-warning text-dark' if req.status == 'pending' else 'bg-secondary' }}">
-                      Status: {{ req.status | capitalize }}
-                    </span>
-                    <span class="small text-muted">{{ req.created_at.strftime('%b %d, %Y') if req.created_at else '' }}</span>
-                  </div>
-
-                  <h6 class="fw-bold mb-1">
-                    <a href="{{ url_for('posts.post_detail', post_id=req.post.id) }}" class="text-decoration-none">{{ req.post.title }}</a>
-                  </h6>
-                  <p class="small text-muted mb-2">Author: <strong>{{ req.post.user_name }}</strong> ({{ req.post.location }})</p>
-
-                  <div class="p-2 bg-light rounded small mb-2">
-                    <strong>Your Note:</strong> {{ req.message }}
-                  </div>
-
-                  {% if req.response_note %}
-                    <div class="p-2 bg-info-subtle text-info-emphasis rounded small mb-3">
-                      <i class="bi bi-chat-quote me-1"></i><strong>Author Response:</strong> {{ req.response_note }}
-                    </div>
-                  {% endif %}
-
-                  <div class="mt-auto d-flex justify-content-between align-items-center">
-                    <a href="{{ url_for('posts.post_detail', post_id=req.post.id) }}" class="btn btn-outline-primary btn-sm">
-                      View Post
-                    </a>
-                    {% if req.status == 'pending' %}
-                      <form method="POST" action="{{ url_for('exchange.cancel_request', request_id=req.id) }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        <button type="submit" class="btn btn-outline-secondary btn-sm" onclick="return confirm('Cancel this request?');">
-                          Cancel Request
-                        </button>
-                      </form>
-                    {% elif req.status == 'accepted' %}
-                      <form method="POST" action="{{ url_for('exchange.complete_exchange', request_id=req.id) }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Confirm that this exchange has been completed?');">
-                          <i class="bi bi-check2-circle me-1"></i>Mark Completed
-                        </button>
-                      </form>
-                    {% endif %}
-                  </div>
-                </div>
-              </div>
-            {% endfor %}
-          </div>
-        {% else %}
-          <div class="text-center py-5 card border-0 p-4 bg-white">
-            <i class="bi bi-send fs-1 text-muted"></i>
-            <h5 class="mt-2 fw-semibold">No requests sent yet</h5>
-            <p class="text-muted small">Browse community posts to find resources you need or want to assist with.</p>
-            <div>
-              <a href="{{ url_for('posts.posts') }}" class="btn btn-outline-primary btn-sm">Browse Posts</a>
-            </div>
-          </div>
-        {% endif %}
-      </div>
-
-      <!-- TAB 4: Recommended Matches -->
-      <div class="tab-pane fade" id="matches-pane" role="tabpanel" tabindex="0">
-        {% if matches %}
-          <div class="row g-3">
-            {% for m in matches %}
-              <div class="col-md-6">
-                <div class="card border-0 shadow-sm p-3 h-100 bg-white">
-                  <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="badge {{ 'badge-offer' if m.post.post_type == 'offer' else 'badge-request' }}">
-                      {{ m.post.post_type | capitalize }}
-                    </span>
-                    <span class="badge bg-primary text-white px-2 py-1">
-                      {{ m.score }}% Match
-                    </span>
-                  </div>
-
-                  <h6 class="fw-bold mb-1">
-                    <a href="{{ url_for('posts.post_detail', post_id=m.post.id) }}" class="text-decoration-none text-dark">
-                      {{ m.post.title }}
-                    </a>
-                  </h6>
-                  <p class="small text-muted mb-2">
-                    <i class="bi bi-geo-alt me-1"></i>{{ m.post.location }} &middot; {{ m.post.category }}
-                  </p>
-
-                  {% if m.matched_with_my_post %}
-                    <div class="small p-2 bg-light rounded mb-2">
-                      <span class="text-muted">Matched with your post:</span>
-                      <strong>{{ m.matched_with_my_post.title }}</strong>
-                    </div>
-                  {% endif %}
-
-                  <!-- Factor breakdown list -->
-                  <div class="small text-muted mb-3">
-                    {% for factor in m.factors %}
-                      {% if factor.score > 0 %}
-                        <div class="d-flex justify-content-between">
-                          <span>&bull; {{ factor.factor }}</span>
-                          <span class="fw-semibold text-success">+{{ factor.score }} pts</span>
-                        </div>
-                      {% endif %}
-                    {% endfor %}
-                  </div>
-
-                  <div class="mt-auto">
-                    <a href="{{ url_for('posts.post_detail', post_id=m.post.id) }}" class="btn btn-outline-primary btn-sm w-100">
-                      View Post &amp; Connect &rarr;
-                    </a>
-                  </div>
-                </div>
-              </div>
-            {% endfor %}
-          </div>
-        {% else %}
-          <div class="text-center py-5 card border-0 p-4 bg-white">
-            <i class="bi bi-stars fs-1 text-warning"></i>
-            <h5 class="mt-2 fw-semibold">No strong recommendations right now</h5>
-            <p class="text-muted small">As new offers and requests are created in your area, smart matches will appear here automatically.</p>
-          </div>
-        {% endif %}
-      </div>
-
-    </div>
-
   </div>
-</section>
+
+  <!-- Dashboard Tabs -->
+  <ul class="nav nav-pills mb-4 border-bottom pb-2 gap-2" id="dashboardTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active fw-bold py-2 px-3" id="incoming-tab" data-bs-toggle="pill" data-bs-target="#incoming" type="button" role="tab">
+        <i class="bi bi-inbox me-1"></i>Incoming Requests
+        {% if incoming_requests %}
+          <span class="badge bg-danger ms-1">{{ incoming_requests|length }}</span>
+        {% endif %}
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link fw-bold py-2 px-3" id="outgoing-tab" data-bs-toggle="pill" data-bs-target="#outgoing" type="button" role="tab">
+        <i class="bi bi-send me-1"></i>My Requests
+        {% if outgoing_requests %}
+          <span class="badge bg-secondary ms-1">{{ outgoing_requests|length }}</span>
+        {% endif %}
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link fw-bold py-2 px-3" id="listings-tab" data-bs-toggle="pill" data-bs-target="#listings" type="button" role="tab">
+        <i class="bi bi-card-list me-1"></i>My Listings ({{ my_posts|length }})
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link fw-bold py-2 px-3" id="saved-tab" data-bs-toggle="pill" data-bs-target="#saved" type="button" role="tab">
+        <i class="bi bi-bookmark-heart me-1"></i>Saved Watchlist ({{ saved_listings|length }})
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link fw-bold py-2 px-3" id="notif-tab" data-bs-toggle="pill" data-bs-target="#notifications" type="button" role="tab">
+        <i class="bi bi-bell me-1"></i>Notifications
+        {% if unread_notifications_count and unread_notifications_count > 0 %}
+          <span class="badge bg-danger ms-1">{{ unread_notifications_count }}</span>
+        {% endif %}
+      </button>
+    </li>
+  </ul>
+
+  <!-- Tab Contents -->
+  <div class="tab-content" id="dashboardTabContent">
+    <!-- TAB 1: Incoming Requests -->
+    <div class="tab-pane fade show active" id="incoming" role="tabpanel" aria-labelledby="incoming-tab">
+      {% if incoming_requests %}
+      <div class="row g-3">
+        {% for req in incoming_requests %}
+        <div class="col-lg-6">
+          <div class="card card-modern p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="badge {% if req.status == 'accepted' %}bg-success{% elif req.status == 'completed' %}bg-primary{% elif req.status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                {{ req.status | upper }}
+              </span>
+              <span class="text-muted small">{{ req.created_at.strftime('%b %d, %H:%M') if req.created_at else '' }}</span>
+            </div>
+            <h6 class="fw-bold mb-1">
+              <a href="{{ url_for('exchange.view_thread', request_id=req.id) }}" class="text-dark text-decoration-none">
+                {{ req.post.title }}
+              </a>
+            </h6>
+            <div class="small text-muted mb-2">
+              From: <a href="{{ url_for('auth.public_profile', user_id=req.requester.id) }}" class="fw-semibold text-secondary text-decoration-none">{{ req.requester.name }}</a>
+              &bull; {{ req.requester.location }}
+            </div>
+            <div class="p-2 bg-light rounded small text-secondary mb-3">
+              "{{ req.message[:110] }}{% if req.message|length > 110 %}...{% endif %}"
+            </div>
+            <div class="mt-auto d-flex gap-2">
+              <a href="{{ url_for('exchange.view_thread', request_id=req.id) }}" class="btn btn-primary btn-sm fw-bold w-100">
+                <i class="bi bi-chat-dots me-1"></i>Open Coordination Thread
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-inbox empty-state-icon"></i>
+        <h5 class="fw-bold">No incoming exchange requests</h5>
+        <p class="text-muted small">When neighbors express interest in your listings, requests will appear here.</p>
+        <a href="{{ url_for('posts.new_post') }}" class="btn btn-primary btn-sm">Post a New Offer</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- TAB 2: My Requests (Outgoing) -->
+    <div class="tab-pane fade" id="outgoing" role="tabpanel" aria-labelledby="outgoing-tab">
+      {% if outgoing_requests %}
+      <div class="row g-3">
+        {% for req in outgoing_requests %}
+        <div class="col-lg-6">
+          <div class="card card-modern p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="badge {% if req.status == 'accepted' %}bg-success{% elif req.status == 'completed' %}bg-primary{% elif req.status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                {{ req.status | upper }}
+              </span>
+              <span class="text-muted small">{{ req.created_at.strftime('%b %d') if req.created_at else '' }}</span>
+            </div>
+            <h6 class="fw-bold mb-1">
+              <a href="{{ url_for('exchange.view_thread', request_id=req.id) }}" class="text-dark text-decoration-none">
+                {{ req.post.title }}
+              </a>
+            </h6>
+            <div class="small text-muted mb-2">
+              Offered by: <a href="{{ url_for('auth.public_profile', user_id=req.post.user_id) }}" class="fw-semibold text-secondary text-decoration-none">{{ req.post.user_name }}</a>
+            </div>
+            <div class="mt-auto">
+              <a href="{{ url_for('exchange.view_thread', request_id=req.id) }}" class="btn btn-outline-primary btn-sm w-100 fw-bold">
+                <i class="bi bi-chat-dots me-1"></i>View Thread &amp; Status
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-send empty-state-icon"></i>
+        <h5 class="fw-bold">No outgoing requests</h5>
+        <p class="text-muted small">You haven't requested any resources from neighbors yet.</p>
+        <a href="{{ url_for('posts.posts') }}" class="btn btn-primary btn-sm">Explore Community Listings</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- TAB 3: My Listings -->
+    <div class="tab-pane fade" id="listings" role="tabpanel" aria-labelledby="listings-tab">
+      {% if my_posts %}
+      <div class="row g-3">
+        {% for post in my_posts %}
+        <div class="col-lg-6">
+          <div class="card card-modern p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div class="d-flex gap-1">
+                <span class="{% if post.post_type == 'offer' %}badge-offer{% else %}badge-request{% endif %} small">
+                  {{ post.post_type | upper }}
+                </span>
+                <span class="badge bg-light text-secondary border small">{{ post.category }}</span>
+              </div>
+              <span class="badge {% if post.status == 'open' %}bg-success{% elif post.status == 'completed' %}bg-primary{% else %}bg-secondary{% endif %}">
+                {{ post.status | capitalize }}
+              </span>
+            </div>
+            <h6 class="fw-bold mb-1">
+              <a href="{{ url_for('posts.post_detail', post_id=post.id) }}" class="text-dark text-decoration-none">
+                {{ post.title }}
+              </a>
+            </h6>
+            <p class="text-muted small mb-3">{{ post.description[:90] }}...</p>
+            <div class="mt-auto d-flex gap-2">
+              <a href="{{ url_for('posts.post_detail', post_id=post.id) }}" class="btn btn-outline-primary btn-sm">View</a>
+              <a href="{{ url_for('posts.edit_post', post_id=post.id) }}" class="btn btn-outline-secondary btn-sm">Edit</a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-plus-square empty-state-icon"></i>
+        <h5 class="fw-bold">You haven't posted any listings yet</h5>
+        <p class="text-muted small">Share spare study materials, tools, clothes, or ask for help nearby.</p>
+        <a href="{{ url_for('posts.new_post') }}" class="btn btn-primary btn-sm">Create First Listing</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- TAB 4: Saved Watchlist -->
+    <div class="tab-pane fade" id="saved" role="tabpanel" aria-labelledby="saved-tab">
+      {% if saved_listings %}
+      <div class="row g-3">
+        {% for item in saved_listings %}
+        <div class="col-lg-6">
+          <div class="card card-modern p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="{% if item.post.post_type == 'offer' %}badge-offer{% else %}badge-request{% endif %} small">
+                {{ item.post.post_type | upper }}
+              </span>
+              <!-- Unbookmark Form -->
+              <form action="{{ url_for('posts.toggle_save_post', post_id=item.post.id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-link text-danger p-0 small text-decoration-none" title="Remove from Watchlist">
+                  <i class="bi bi-trash"></i> Remove
+                </button>
+              </form>
+            </div>
+            <h6 class="fw-bold mb-1">
+              <a href="{{ url_for('posts.post_detail', post_id=item.post.id) }}" class="text-dark text-decoration-none">
+                {{ item.post.title }}
+              </a>
+            </h6>
+            <p class="text-muted small mb-2">{{ item.post.description[:90] }}...</p>
+            <div class="d-flex justify-content-between align-items-center small text-muted">
+              <span><i class="bi bi-geo-alt"></i> {{ item.post.location }}</span>
+              <a href="{{ url_for('posts.post_detail', post_id=item.post.id) }}" class="btn btn-outline-primary btn-sm">
+                View Listing &raquo;
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-bookmark empty-state-icon"></i>
+        <h5 class="fw-bold">Your Watchlist is empty</h5>
+        <p class="text-muted small">Click the bookmark icon on any listing to save it for later.</p>
+        <a href="{{ url_for('posts.posts') }}" class="btn btn-primary btn-sm">Browse Listings</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- TAB 5: In-App Notifications -->
+    <div class="tab-pane fade" id="notifications" role="tabpanel" aria-labelledby="notif-tab">
+      <div class="card card-modern p-3">
+        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+          <h6 class="fw-bold mb-0"><i class="bi bi-bell-fill text-primary me-2"></i>Recent Activity Alerts</h6>
+          {% if notifications %}
+          <form action="{{ url_for('exchange.mark_all_notifications_read') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-link p-0 small text-primary text-decoration-none">
+              <i class="bi bi-check2-all me-1"></i>Mark all as read
+            </button>
+          </form>
+          {% endif %}
+        </div>
+
+        {% if notifications %}
+        <div class="d-flex flex-column gap-2">
+          {% for notif in notifications %}
+          <div class="p-3 border rounded-3 {% if not notif.is_read %}bg-primary-subtle border-primary-subtle{% else %}bg-light{% endif %} d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-bold small text-dark mb-1">{{ notif.title }}</div>
+              <p class="small text-muted mb-0">{{ notif.message }}</p>
+            </div>
+            <div class="text-end ms-3 text-nowrap">
+              <span class="text-muted" style="font-size: 0.72rem;">{{ notif.created_at }}</span>
+              {% if notif.link %}
+                <a href="{{ notif.link }}" class="btn btn-sm btn-outline-primary ms-2 d-inline-block">View</a>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state py-4">
+          <i class="bi bi-bell-slash empty-state-icon" style="font-size: 2rem;"></i>
+          <p class="text-muted small mb-0">No notifications yet. You're all caught up!</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

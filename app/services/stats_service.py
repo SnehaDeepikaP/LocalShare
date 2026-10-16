@@ -31,6 +31,12 @@ def get_community_impact_stats():
         count = Post.query.filter_by(category=cat, status='open').count()
         category_counts[cat] = count
 
+    # Sustainability and Reuse Metrics
+    from app.models.review import ExchangeReview
+    reused_count = ExchangeReview.query.filter_by(was_reused_or_repaired=True).count()
+    # Transparent estimated waste diversion: 3.2 kg average solid waste avoided per reused item
+    estimated_waste_diverted_kg = round(reused_count * 3.2, 1)
+
     return {
         'members_count': members_count,
         'active_posts_count': active_posts_count,
@@ -39,7 +45,9 @@ def get_community_impact_stats():
         'completed_exchanges_count': total_completed,
         'pending_requests_count': pending_requests_count,
         'closed_posts_count': closed_posts_count,
-        'category_counts': category_counts
+        'category_counts': category_counts,
+        'reused_count': reused_count,
+        'estimated_waste_diverted_kg': estimated_waste_diverted_kg
     }
 
 

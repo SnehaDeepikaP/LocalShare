@@ -37,6 +37,7 @@ ENV/
 # Databases (Local SQLite persistent storage files)
 *.sqlite
 *.sqlite3
+*.bak
 instance/
 
 # Testing & Coverage

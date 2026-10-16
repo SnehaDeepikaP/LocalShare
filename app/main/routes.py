@@ -42,6 +42,16 @@ def dashboard():
     outgoing_requests = ExchangeRequest.query.filter_by(requester_id=user_id)\
         .order_by(ExchangeRequest.created_at.desc()).all()
 
+    # Saved Watchlist
+    from app.models.saved_listing import SavedListing
+    from app.models.notification import Notification
+    saved_listings = SavedListing.query.filter_by(user_id=user_id)\
+        .order_by(SavedListing.created_at.desc()).all()
+
+    # In-App Notifications
+    notifications = Notification.query.filter_by(user_id=user_id)\
+        .order_by(Notification.created_at.desc()).limit(25).all()
+
     # Recommended matches for user
     matches = get_user_dashboard_matches(user_id, limit=4)
 
@@ -51,6 +61,8 @@ def dashboard():
         my_posts=my_posts,
         incoming_requests=incoming_requests,
         outgoing_requests=outgoing_requests,
+        saved_listings=saved_listings,
+        notifications=notifications,
         matches=matches
     )
 

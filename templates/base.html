@@ -3,12 +3,22 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="description" content="LocalShare — A safe, community-driven resource sharing and assistance platform."/>
-  <title>{% block title %}LocalShare — Community Resource Sharing{% endblock %}</title>
+  <meta name="description" content="LocalShare — Share items, lend skills, and support your neighborhood community safely."/>
+  <meta name="csrf-token" content="{{ csrf_token() }}"/>
+  <title>{% block title %}LocalShare — Community Mutual Aid &amp; Sharing{% endblock %}</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
   <!-- Bootstrap 5.3.0 & Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
   <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet"/>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; }
+  </style>
   {% block extra_head %}{% endblock %}
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -16,64 +26,95 @@
 <!-- Navigation -->
 <nav class="navbar navbar-expand-lg navbar-dark sticky-top shadow-sm" id="mainNav" aria-label="Main Navigation">
   <div class="container">
-    <a class="navbar-brand fw-bold fs-4 d-flex align-items-center" href="{{ url_for('main.home') }}">
-      <i class="bi bi-people-fill text-accent-light me-2 fs-3"></i>
-      <span>Local<span class="text-accent-light">Share</span></span>
+    <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('main.home') }}">
+      <span class="d-inline-flex align-items-center justify-content-center bg-teal-subtle rounded-3 p-1" style="background-color: rgba(15, 118, 110, 0.25); color: #2dd4bf;">
+        <i class="bi bi-arrow-repeat fs-4"></i>
+      </span>
+      <span>Local<span style="color: #f59e0b;">Share</span></span>
     </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu"
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu"
             aria-controls="navMenu" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navMenu">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3">
         <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('main.home') }}"><i class="bi bi-house me-1"></i>Home</a>
+          <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}">
+            <i class="bi bi-house me-1"></i>Home
+          </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('posts.posts') }}"><i class="bi bi-grid me-1"></i>Browse</a>
+          <a class="nav-link {% if request.endpoint == 'posts.posts' %}active{% endif %}" href="{{ url_for('posts.posts') }}">
+            <i class="bi bi-compass me-1"></i>Explore
+          </a>
+        </li>
+        {% if session.get('user_id') %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'matching.matches_dashboard' %}active{% endif %}" href="{{ url_for('matching.matches_dashboard') }}">
+            <i class="bi bi-stars text-warning me-1"></i>Smart Matches
+          </a>
+        </li>
+        {% endif %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'main.impact' %}active{% endif %}" href="{{ url_for('main.impact') }}">
+            <i class="bi bi-bar-chart-line me-1"></i>Community Impact
+          </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('main.impact') }}"><i class="bi bi-bar-chart-line me-1"></i>Impact</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('main.guidelines') }}"><i class="bi bi-shield-check me-1"></i>Guidelines</a>
+          <a class="nav-link {% if request.endpoint == 'main.guidelines' %}active{% endif %}" href="{{ url_for('main.guidelines') }}">
+            <i class="bi bi-shield-check me-1"></i>Guidelines
+          </a>
         </li>
       </ul>
 
       <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
         {% if session.get('user_id') %}
           <li class="nav-item">
-            <a class="btn btn-accent btn-sm px-3 shadow-sm" href="{{ url_for('posts.new_post') }}">
-              <i class="bi bi-plus-circle me-1"></i>Create Post
+            <a class="btn btn-accent btn-sm px-3 shadow-sm d-flex align-items-center gap-1" href="{{ url_for('posts.new_post') }}">
+              <i class="bi bi-plus-lg fw-bold"></i><span>Post Listing</span>
             </a>
           </li>
+          <!-- Notification Bell -->
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('matching.matches_dashboard') }}" title="Smart Recommendations">
-              <i class="bi bi-stars text-warning me-1"></i>Matches
+            <a class="nav-link position-relative p-2" href="{{ url_for('main.dashboard') }}#notifications" title="Notifications">
+              <i class="bi bi-bell fs-5"></i>
+              {% if unread_notifications_count and unread_notifications_count > 0 %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
+                  {{ unread_notifications_count }}
+                </span>
+              {% endif %}
             </a>
           </li>
+          <!-- User Dropdown -->
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="bi bi-person-circle fs-5 me-1 text-light"></i>
+            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              {% if session.get('avatar_url') %}
+                <img src="{{ session['avatar_url'] }}" alt="{{ session['user_name'] }}" class="rounded-circle border" width="28" height="28" style="object-fit: cover;">
+              {% else %}
+                <span class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center text-white fw-bold" style="width: 28px; height: 28px; font-size: 0.8rem;">
+                  {{ session['user_name'][0] | upper }}
+                </span>
+              {% endif %}
               <span>{{ session['user_name'] }}</span>
               {% if session.get('role') == 'admin' %}
-                <span class="badge bg-danger ms-1 text-uppercase" style="font-size: 0.65rem;">Admin</span>
+                <span class="badge bg-danger ms-1 text-uppercase" style="font-size: 0.6rem;">Admin</span>
               {% endif %}
             </a>
             <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="userDropdown">
-              <li><a class="dropdown-item" href="{{ url_for('main.dashboard') }}"><i class="bi bi-speedometer2 me-2"></i>My Dashboard</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}"><i class="bi bi-gear me-2"></i>Profile &amp; Settings</a></li>
+              <li><a class="dropdown-item py-2" href="{{ url_for('main.dashboard') }}"><i class="bi bi-speedometer2 me-2 text-primary"></i>My Dashboard</a></li>
+              <li><a class="dropdown-item py-2" href="{{ url_for('auth.public_profile', user_id=session['user_id']) }}"><i class="bi bi-person-badge me-2 text-success"></i>My Public Profile</a></li>
+              <li><a class="dropdown-item py-2" href="{{ url_for('auth.profile') }}"><i class="bi bi-gear me-2 text-secondary"></i>Account Settings</a></li>
               {% if session.get('role') == 'admin' %}
                 <li><hr class="dropdown-divider"></li>
-                <li><h6 class="dropdown-header text-danger"><i class="bi bi-shield-lock me-1"></i>Administration</h6></li>
+                <li><h6 class="dropdown-header text-danger"><i class="bi bi-shield-lock me-1"></i>Moderation Portal</h6></li>
                 <li><a class="dropdown-item" href="{{ url_for('admin.index') }}"><i class="bi bi-kanban me-2"></i>Admin Dashboard</a></li>
                 <li><a class="dropdown-item" href="{{ url_for('admin.users') }}"><i class="bi bi-people me-2"></i>Manage Users</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('admin.posts') }}"><i class="bi bi-card-checklist me-2"></i>Moderate Posts</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('admin.reports') }}"><i class="bi bi-flag me-2"></i>Review Reports</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('admin.audit_logs') }}"><i class="bi bi-journal-text me-2"></i>Audit Logs</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('admin.posts') }}"><i class="bi bi-card-checklist me-2"></i>Moderate Listings</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('admin.reports') }}"><i class="bi bi-flag me-2"></i>Abuse Reports</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('admin.audit_logs') }}"><i class="bi bi-journal-text me-2"></i>Audit History</a></li>
               {% endif %}
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Log Out</a></li>
+              <li><a class="dropdown-item py-2 text-danger" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Log Out</a></li>
             </ul>
           </li>
         {% else %}
@@ -81,7 +122,7 @@
             <a class="nav-link" href="{{ url_for('auth.login') }}">Log In</a>
           </li>
           <li class="nav-item">
-            <a class="btn btn-accent btn-sm px-3 shadow-sm" href="{{ url_for('auth.register') }}">Register</a>
+            <a class="btn btn-primary btn-sm px-3 shadow-sm" href="{{ url_for('auth.register') }}">Join Community</a>
           </li>
         {% endif %}
       </ul>
@@ -89,24 +130,14 @@
   </div>
 </nav>
 
-<!-- Flash Alerts Container -->
+<!-- Flash Messages -->
 <div class="container mt-3" aria-live="polite">
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-      {% for cat, msg in messages %}
-        <div class="alert alert-{{ cat if cat in ['success', 'danger', 'warning', 'info'] else 'primary' }} alert-dismissible fade show shadow-sm" role="alert">
-          <div class="d-flex align-items-center">
-            {% if cat == 'success' %}
-              <i class="bi bi-check-circle-fill fs-5 me-2"></i>
-            {% elif cat == 'danger' %}
-              <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
-            {% elif cat == 'warning' %}
-              <i class="bi bi-exclamation-circle-fill fs-5 me-2"></i>
-            {% else %}
-              <i class="bi bi-info-circle-fill fs-5 me-2"></i>
-            {% endif %}
-            <div>{{ msg }}</div>
-          </div>
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show shadow-sm d-flex align-items-center" role="alert">
+          <i class="bi {% if category == 'success' %}bi-check-circle-fill text-success{% elif category == 'danger' or category == 'error' %}bi-exclamation-triangle-fill text-danger{% else %}bi-info-circle-fill text-primary{% endif %} me-2 fs-5"></i>
+          <div>{{ message }}</div>
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
       {% endfor %}
@@ -114,37 +145,74 @@
   {% endwith %}
 </div>
 
-<!-- Main Content -->
+<!-- Main Content Block -->
 <main class="flex-grow-1">
   {% block content %}{% endblock %}
 </main>
 
-<!-- Footer -->
-<footer class="footer mt-auto py-4">
+<!-- Modern Community Footer -->
+<footer class="mt-5 py-5">
   <div class="container">
-    <div class="row g-4 align-items-center">
-      <div class="col-md-6 text-center text-md-start">
-        <h5 class="fw-bold mb-1 text-light"><i class="bi bi-people-fill text-accent-light me-2"></i>LocalShare</h5>
-        <p class="small text-muted mb-0">Empowering local communities to share, support, and connect sustainably.</p>
+    <div class="row g-4 mb-4">
+      <div class="col-lg-4 col-md-6">
+        <h5 class="text-white fw-bold d-flex align-items-center gap-2 mb-3">
+          <i class="bi bi-arrow-repeat text-warning fs-4"></i> LocalShare
+        </h5>
+        <p class="small text-muted mb-3">
+          A neighbor-powered platform designed to exchange useful resources, share repair skills, lend household items, and build stronger, sustainable communities.
+        </p>
+        <div class="d-flex gap-2">
+          <span class="badge bg-secondary bg-opacity-25 text-white border border-secondary border-opacity-50 px-2 py-1 small">
+            <i class="bi bi-shield-check text-success me-1"></i>Privacy Shield Protected
+          </span>
+          <span class="badge bg-secondary bg-opacity-25 text-white border border-secondary border-opacity-50 px-2 py-1 small">
+            <i class="bi bi-lock text-warning me-1"></i>End-to-End Handshake
+          </span>
+        </div>
       </div>
-      <div class="col-md-6 text-center text-md-end">
-        <ul class="list-inline mb-2 small">
-          <li class="list-inline-item"><a href="{{ url_for('main.home') }}" class="text-secondary text-decoration-none">Home</a></li>
-          <li class="list-inline-item">&middot;</li>
-          <li class="list-inline-item"><a href="{{ url_for('posts.posts') }}" class="text-secondary text-decoration-none">Browse Posts</a></li>
-          <li class="list-inline-item">&middot;</li>
-          <li class="list-inline-item"><a href="{{ url_for('main.impact') }}" class="text-secondary text-decoration-none">Impact Dashboard</a></li>
-          <li class="list-inline-item">&middot;</li>
-          <li class="list-inline-item"><a href="{{ url_for('main.guidelines') }}" class="text-secondary text-decoration-none">Community Guidelines</a></li>
+      <div class="col-lg-2 col-md-3 col-6">
+        <h6 class="mb-3">Community</h6>
+        <ul class="list-unstyled small d-flex flex-column gap-2 mb-0">
+          <li><a href="{{ url_for('posts.posts', type='offer') }}">Browse Offers</a></li>
+          <li><a href="{{ url_for('posts.posts', type='request') }}">Browse Requests</a></li>
+          <li><a href="{{ url_for('main.impact') }}">Impact Statistics</a></li>
+          <li><a href="{{ url_for('main.guidelines') }}">Community Safety</a></li>
         </ul>
-        <p class="small text-muted mb-0">&copy; 2026 LocalShare Platform. Non-profit Community Project.</p>
+      </div>
+      <div class="col-lg-2 col-md-3 col-6">
+        <h6 class="mb-3">Platform</h6>
+        <ul class="list-unstyled small d-flex flex-column gap-2 mb-0">
+          <li><a href="{{ url_for('auth.login') }}">Account Sign-In</a></li>
+          <li><a href="{{ url_for('auth.register') }}">Register Free</a></li>
+          <li><a href="{{ url_for('posts.new_post') }}">Create Listing</a></li>
+          {% if session.get('role') == 'admin' %}
+            <li><a href="{{ url_for('admin.index') }}" class="text-danger fw-bold">Admin Portal</a></li>
+          {% endif %}
+        </ul>
+      </div>
+      <div class="col-lg-4 col-md-12">
+        <h6 class="mb-3">Neighborhood Safety Pledge</h6>
+        <p class="small text-muted mb-2">
+          We never disclose exact home addresses or phone numbers publicly. All coordination happens through authenticated in-app threads. Meet in well-lit public spaces for all handovers.
+        </p>
+        <div class="small text-muted">
+          LocalShare 3.0 &bull; Open Neighborhood Resource Sharing Network.
+        </div>
+      </div>
+    </div>
+    <hr class="border-secondary opacity-25 my-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center small text-muted gap-2">
+      <div>&copy; 2026 LocalShare Network. Dedicated to neighborhood solidarity &amp; circular sustainability.</div>
+      <div class="d-flex gap-3">
+        <a href="{{ url_for('main.guidelines') }}">Code of Conduct</a>
+        <a href="{{ url_for('main.guidelines') }}#privacy">Privacy Principles</a>
+        <a href="{{ url_for('main.impact') }}">Live Verification</a>
       </div>
     </div>
   </div>
 </footer>
 
-<!-- Scripts -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- Bootstrap 5 Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% block extra_scripts %}{% endblock %}

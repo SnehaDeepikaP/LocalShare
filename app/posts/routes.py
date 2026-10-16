@@ -1,8 +1,12 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, abort, jsonify
 from sqlalchemy import or_
 from app.extensions import db
-from app.models.post import Post, VALID_CATEGORIES, VALID_TYPES, VALID_STATUSES
+from app.models.post import (
+    Post, VALID_CATEGORIES, VALID_TYPES, VALID_STATUSES,
+    VALID_URGENCIES, VALID_CONDITIONS, VALID_INTENTS
+)
 from app.models.exchange import ExchangeRequest
+from app.models.saved_listing import SavedListing
 from app.services.security_service import require_csrf, login_required
 from app.services.matching_service import get_matches_for_post
 
@@ -12,12 +16,15 @@ posts_bp = Blueprint('posts', __name__)
 def posts():
     post_type = request.args.get('type', '').strip().lower()
     category = request.args.get('category', '').strip()
+    urgency = request.args.get('urgency', '').strip().lower()
+    condition = request.args.get('condition', '').strip()
+    intent = request.args.get('intent', '').strip().lower()
     location = request.args.get('location', '').strip()
     query_text = request.args.get('q', '').strip()
     status_filter = request.args.get('status', 'open').strip().lower()
     sort_by = request.args.get('sort', 'newest').strip().lower()
     page = request.args.get('page', 1, type=int)
-    per_page = 6
+    per_page = 9
 
     # Base query
     query = Post.query
@@ -38,6 +45,18 @@ def posts():
     if category in VALID_CATEGORIES:
         query = query.filter(Post.category == category)
 
+    # Urgency filter
+    if urgency in VALID_URGENCIES:
+        query = query.filter(Post.urgency == urgency)
+
+    # Condition filter
+    if condition in VALID_CONDITIONS:
+        query = query.filter(Post.condition == condition)
+
+    # Intent filter
+    if intent in VALID_INTENTS:
+        query = query.filter(Post.intent == intent)
+
     # Location filter
     if location:
         query = query.filter(Post.location.ilike(f'%{location}%'))
@@ -53,6 +72,16 @@ def posts():
     # Sorting
     if sort_by == 'oldest':
         query = query.order_by(Post.created_at.asc())
+    elif sort_by == 'urgent_first':
+        # Prioritize urgent, high, then normal
+        query = query.order_by(
+            db.case(
+                (Post.urgency == 'urgent', 1),
+                (Post.urgency == 'high', 2),
+                else_=3
+            ),
+            Post.created_at.desc()
+        )
     elif sort_by == 'title':
         query = query.order_by(Post.title.asc())
     else:
@@ -62,17 +91,30 @@ def posts():
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     all_posts = pagination.items
 
+    # Saved listings for logged-in user
+    saved_post_ids = set()
+    if 'user_id' in session:
+        saved = SavedListing.query.filter_by(user_id=session['user_id']).all()
+        saved_post_ids = {s.post_id for s in saved}
+
     return render_template(
         'posts.html',
         posts=all_posts,
         pagination=pagination,
         selected_type=post_type,
         selected_category=category,
+        selected_urgency=urgency,
+        selected_condition=condition,
+        selected_intent=intent,
         location_filter=location,
         query_text=query_text,
         status_filter=status_filter,
         sort_by=sort_by,
-        categories=VALID_CATEGORIES
+        categories=VALID_CATEGORIES,
+        urgencies=VALID_URGENCIES,
+        conditions=VALID_CONDITIONS,
+        intents=VALID_INTENTS,
+        saved_post_ids=saved_post_ids
     )
 
 
@@ -82,23 +124,56 @@ def post_detail(post_id):
     
     # Check if logged-in user already has a pending exchange request for this post
     existing_request = None
+    is_saved = False
     if 'user_id' in session:
         existing_request = ExchangeRequest.query.filter_by(
             post_id=post.id,
             requester_id=session['user_id']
         ).first()
+        is_saved = bool(SavedListing.query.filter_by(
+            user_id=session['user_id'],
+            post_id=post.id
+        ).first())
 
     # Get smart recommendations if post is open
     recommended_matches = []
     if post.status == 'open':
         recommended_matches = get_matches_for_post(post, limit=3)
 
+    author_reputation = post.author.reputation if post.author else {'average': 5.0, 'count': 0, 'label': 'Neighbor'}
+
     return render_template(
         'post_detail.html',
         post=post,
         existing_request=existing_request,
-        recommended_matches=recommended_matches
+        recommended_matches=recommended_matches,
+        is_saved=is_saved,
+        author_reputation=author_reputation
     )
+
+
+@posts_bp.route('/post/<int:post_id>/save', methods=['POST'])
+@login_required
+@require_csrf
+def toggle_save_post(post_id):
+    """Toggle bookmarking a post to user's saved watchlist."""
+    post = Post.query.get_or_404(post_id)
+    existing = SavedListing.query.filter_by(
+        user_id=session['user_id'],
+        post_id=post.id
+    ).first()
+
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+        flash('Listing removed from your saved watchlist.', 'info')
+    else:
+        new_save = SavedListing(user_id=session['user_id'], post_id=post.id)
+        db.session.add(new_save)
+        db.session.commit()
+        flash('Listing saved to your watchlist!', 'success')
+
+    return redirect(request.referrer or url_for('posts.post_detail', post_id=post.id))
 
 
 @posts_bp.route('/post/new', methods=['GET', 'POST'])
@@ -108,6 +183,9 @@ def new_post():
     if request.method == 'POST':
         post_type = request.form.get('post_type', '').strip().lower()
         category = request.form.get('category', '').strip()
+        urgency = request.form.get('urgency', 'normal').strip().lower()
+        condition = request.form.get('condition', '').strip()
+        intent = request.form.get('intent', 'giveaway').strip().lower()
         title = request.form.get('title', '').strip()
         description = request.form.get('description', '').strip()
         location = request.form.get('location', '').strip()
@@ -117,12 +195,18 @@ def new_post():
             errors.append('Invalid post type. Choose Offer or Request.')
         if category not in VALID_CATEGORIES:
             errors.append('Please select a valid category from the list.')
+        if urgency not in VALID_URGENCIES:
+            urgency = 'normal'
+        if intent not in VALID_INTENTS:
+            intent = 'giveaway'
+        if condition and condition not in VALID_CONDITIONS:
+            condition = None
         if not title or len(title) < 4 or len(title) > 200:
             errors.append('Title must be between 4 and 200 characters.')
         if not description or len(description) < 10:
             errors.append('Description must be at least 10 characters long.')
         if not location or len(location) < 2 or len(location) > 120:
-            errors.append('Location is required.')
+            errors.append('Location or neighborhood is required.')
 
         if errors:
             for err in errors:
@@ -131,10 +215,16 @@ def new_post():
                 'new_post.html',
                 post_type=post_type,
                 category=category,
+                urgency=urgency,
+                condition=condition,
+                intent=intent,
                 title=title,
                 description=description,
                 location=location,
-                categories=VALID_CATEGORIES
+                categories=VALID_CATEGORIES,
+                urgencies=VALID_URGENCIES,
+                conditions=VALID_CONDITIONS,
+                intents=VALID_INTENTS
             )
 
         post = Post(
@@ -142,6 +232,9 @@ def new_post():
             user_name=session['user_name'],
             post_type=post_type,
             category=category,
+            urgency=urgency,
+            condition=condition if condition else None,
+            intent=intent,
             title=title,
             description=description,
             location=location,
@@ -153,7 +246,13 @@ def new_post():
         flash('Your post was published successfully!', 'success')
         return redirect(url_for('posts.success', post_id=post.id))
 
-    return render_template('new_post.html', categories=VALID_CATEGORIES)
+    return render_template(
+        'new_post.html',
+        categories=VALID_CATEGORIES,
+        urgencies=VALID_URGENCIES,
+        conditions=VALID_CONDITIONS,
+        intents=VALID_INTENTS
+    )
 
 
 @posts_bp.route('/success/<int:post_id>')
@@ -175,6 +274,9 @@ def edit_post(post_id):
 
     if request.method == 'POST':
         category = request.form.get('category', '').strip()
+        urgency = request.form.get('urgency', post.urgency or 'normal').strip().lower()
+        condition = request.form.get('condition', post.condition or '').strip()
+        intent = request.form.get('intent', post.intent or 'giveaway').strip().lower()
         title = request.form.get('title', '').strip()
         description = request.form.get('description', '').strip()
         location = request.form.get('location', '').strip()
@@ -183,6 +285,12 @@ def edit_post(post_id):
         errors = []
         if category not in VALID_CATEGORIES:
             errors.append('Invalid category.')
+        if urgency not in VALID_URGENCIES:
+            urgency = 'normal'
+        if intent not in VALID_INTENTS:
+            intent = 'giveaway'
+        if condition and condition not in VALID_CONDITIONS:
+            condition = None
         if not title or len(title) < 4 or len(title) > 200:
             errors.append('Title must be between 4 and 200 characters.')
         if not description or len(description) < 10:
@@ -195,9 +303,19 @@ def edit_post(post_id):
         if errors:
             for err in errors:
                 flash(err, 'danger')
-            return render_template('edit_post.html', post=post, categories=VALID_CATEGORIES)
+            return render_template(
+                'edit_post.html',
+                post=post,
+                categories=VALID_CATEGORIES,
+                urgencies=VALID_URGENCIES,
+                conditions=VALID_CONDITIONS,
+                intents=VALID_INTENTS
+            )
 
         post.category = category
+        post.urgency = urgency
+        post.condition = condition if condition else None
+        post.intent = intent
         post.title = title
         post.description = description
         post.location = location
@@ -207,7 +325,14 @@ def edit_post(post_id):
         flash('Post updated successfully.', 'success')
         return redirect(url_for('posts.post_detail', post_id=post.id))
 
-    return render_template('edit_post.html', post=post, categories=VALID_CATEGORIES)
+    return render_template(
+        'edit_post.html',
+        post=post,
+        categories=VALID_CATEGORIES,
+        urgencies=VALID_URGENCIES,
+        conditions=VALID_CONDITIONS,
+        intents=VALID_INTENTS
+    )
 
 
 @posts_bp.route('/post/<int:post_id>/status', methods=['POST'])
