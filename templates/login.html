@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Login – LocalShare{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-5 col-lg-4">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-4">
+            <h3 class="fw-bold text-center mb-1">Welcome Back</h3>
+            <p class="text-muted text-center small mb-4">Login to your LocalShare account</p>
+
+            <form id="loginForm" method="POST" action="{{ url_for('login') }}" novalidate>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Email Address</label>
+                <input type="email" name="email" id="loginEmail" class="form-control"
+                       placeholder="you@example.com" required/>
+                <div class="invalid-feedback">Enter a valid email.</div>
+              </div>
+
+              <div class="mb-4">
+                <label class="form-label fw-semibold">Password</label>
+                <input type="password" name="password" id="loginPassword" class="form-control"
+                       placeholder="Your password" required/>
+                <div class="invalid-feedback">Password is required.</div>
+              </div>
+
+              <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                <i class="bi bi-box-arrow-in-right me-1"></i>Login
+              </button>
+            </form>
+
+            <hr class="my-3"/>
+            <p class="small text-muted text-center mb-1">Demo accounts:</p>
+            <p class="small text-center mb-0">
+              <code>priya@example.com</code> / <code>Test@123</code><br/>
+              <code>rahul@example.com</code> / <code>Test@123</code>
+            </p>
+
+            <p class="text-center small mt-3 mb-0">
+              New here? <a href="{{ url_for('register') }}">Create account</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
