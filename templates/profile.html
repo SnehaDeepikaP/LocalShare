@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Profile &amp; Account Settings — LocalShare{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container max-w-800 mx-auto">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="fw-bold mb-0">Profile &amp; Settings</h2>
+      <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+      </a>
+    </div>
+
+    <div class="row g-4">
+      <!-- Profile Information -->
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm p-4 bg-white h-100">
+          <h5 class="fw-bold mb-3"><i class="bi bi-person-circle text-primary me-2"></i>Personal Details</h5>
+          
+          <form method="POST" action="{{ url_for('auth.profile') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="action" value="update_info"/>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold" for="profileName">Full Name</label>
+              <input type="text" name="name" id="profileName" class="form-control"
+                     value="{{ user.name }}" required minlength="2" maxlength="100"/>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold" for="profileEmail">Email Address</label>
+              <input type="email" id="profileEmail" class="form-control bg-light"
+                     value="{{ user.email }}" disabled/>
+              <div class="form-text small">Email cannot be changed directly for security.</div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold" for="profileLoc">Location / Area</label>
+              <input type="text" name="location" id="profileLoc" class="form-control"
+                     value="{{ user.location }}" required maxlength="120"/>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold">
+              <i class="bi bi-save me-1"></i>Save Profile
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Password Change -->
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm p-4 bg-white h-100">
+          <h5 class="fw-bold mb-3"><i class="bi bi-shield-lock text-primary me-2"></i>Change Password</h5>
+
+          <form method="POST" action="{{ url_for('auth.profile') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="action" value="change_password"/>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold" for="currPwd">Current Password</label>
+              <input type="password" name="current_password" id="currPwd" class="form-control" required/>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold" for="newPwd">New Password</label>
+              <input type="password" name="new_password" id="newPwd" class="form-control"
+                     placeholder="Min 6 chars, 1 uppercase, 1 digit" required minlength="6"/>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold" for="confPwd">Confirm New Password</label>
+              <input type="password" name="confirm_password" id="confPwd" class="form-control" required/>
+            </div>
+
+            <button type="submit" class="btn btn-outline-danger btn-sm px-4 fw-semibold">
+              <i class="bi bi-key me-1"></i>Update Password
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

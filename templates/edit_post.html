@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Edit Post — LocalShare{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-7">
+        <div class="card border-0 shadow-sm p-4 bg-white">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="fw-bold mb-0">Edit Community Post</h3>
+            <span class="badge {{ 'badge-offer' if post.post_type == 'offer' else 'badge-request' }} fs-6">
+              {{ post.post_type | capitalize }}
+            </span>
+          </div>
+          <p class="text-muted small mb-4">Update the details or availability status of your post.</p>
+
+          <form id="editPostForm" method="POST" action="{{ url_for('posts.edit_post', post_id=post.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+            <!-- Category -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="category">Category</label>
+              <select name="category" id="category" class="form-select" required>
+                {% for cat in categories %}
+                  <option value="{{ cat }}" {{ 'selected' if post.category == cat }}>{{ cat }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Title -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="postTitle">Title</label>
+              <input type="text" name="title" id="postTitle" class="form-control"
+                     value="{{ post.title }}" required maxlength="200"/>
+              <div class="d-flex justify-content-between small text-muted mt-1">
+                <span>Clear and concise title</span>
+                <span><span id="titleCount">{{ post.title | length }}</span>/200</span>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="postDesc">Description</label>
+              <textarea name="description" id="postDesc" class="form-control" rows="5"
+                        required minlength="10">{{ post.description }}</textarea>
+              <div class="form-text small">Include details like quantity, condition, or timing.</div>
+            </div>
+
+            <!-- Location -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="postLocation">Location / Area</label>
+              <input type="text" name="location" id="postLocation" class="form-control"
+                     value="{{ post.location }}" required maxlength="120"/>
+            </div>
+
+            <!-- Status -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold" for="postStatus">Post Status</label>
+              <select name="status" id="postStatus" class="form-select">
+                <option value="open" {{ 'selected' if post.status == 'open' }}>Open (Accepting interest)</option>
+                <option value="in_progress" {{ 'selected' if post.status == 'in_progress' }}>In Progress (Exchange coordinating)</option>
+                <option value="completed" {{ 'selected' if post.status == 'completed' }}>Completed (Exchange finished)</option>
+                <option value="closed" {{ 'selected' if post.status == 'closed' }}>Closed (Unavailable)</option>
+              </select>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold">
+                <i class="bi bi-check2 me-1"></i>Save Changes
+              </button>
+              <a href="{{ url_for('posts.post_detail', post_id=post.id) }}" class="btn btn-outline-secondary px-4 py-2">
+                Cancel
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Report Moderation Queue — Admin LocalShare{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb small mb-1">
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.index') }}">Admin</a></li>
+            <li class="breadcrumb-item active">Reports</li>
+          </ol>
+        </nav>
+        <h2 class="fw-bold mb-0">Community Report Queue</h2>
+      </div>
+      <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Admin
+      </a>
+    </div>
+
+    <!-- Filter Pills -->
+    <div class="mb-4">
+      <div class="btn-group btn-group-sm">
+        <a href="{{ url_for('admin.reports', status='open') }}" class="btn {{ 'btn-danger' if status_filter == 'open' else 'btn-outline-danger' }}">
+          Open Reports
+        </a>
+        <a href="{{ url_for('admin.reports', status='action_taken') }}" class="btn {{ 'btn-success' if status_filter == 'action_taken' else 'btn-outline-success' }}">
+          Action Taken
+        </a>
+        <a href="{{ url_for('admin.reports', status='dismissed') }}" class="btn {{ 'btn-secondary' if status_filter == 'dismissed' else 'btn-outline-secondary' }}">
+          Dismissed
+        </a>
+        <a href="{{ url_for('admin.reports', status='all') }}" class="btn {{ 'btn-dark' if status_filter == 'all' else 'btn-outline-dark' }}">
+          All Reports
+        </a>
+      </div>
+    </div>
+
+    {% if reports %}
+      <div class="row g-4">
+        {% for rep in reports %}
+          <div class="col-md-6">
+            <div class="card border-0 shadow-sm p-4 bg-white h-100">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge {% if rep.status == 'open' %}bg-danger{% elif rep.status == 'action_taken' %}bg-success{% else %}bg-secondary{% endif %}">
+                  Status: {{ rep.status | capitalize }}
+                </span>
+                <span class="small text-muted">{{ rep.created_at.strftime('%b %d, %Y %H:%M') if rep.created_at else '' }}</span>
+              </div>
+
+              <h5 class="fw-bold mb-1 text-danger">Reason: {{ rep.reason | capitalize }}</h5>
+              
+              <div class="small text-muted mb-2">
+                {% if rep.post %}
+                  <strong>Target Post:</strong> <a href="{{ url_for('posts.post_detail', post_id=rep.post.id) }}">{{ rep.post.title }}</a><br/>
+                {% endif %}
+                {% if rep.reported_user %}
+                  <strong>Reported User:</strong> {{ rep.reported_user.name }} ({{ rep.reported_user.email }})<br/>
+                {% endif %}
+                {% if rep.reporter %}
+                  <strong>Filed by:</strong> {{ rep.reporter.name }}
+                {% else %}
+                  <strong>Filed by:</strong> Anonymous / Deleted User
+                {% endif %}
+              </div>
+
+              <div class="p-3 bg-light rounded small mb-3">
+                <strong>Details:</strong> {{ rep.details }}
+              </div>
+
+              {% if rep.action_taken %}
+                <div class="p-2 bg-info-subtle text-info-emphasis rounded small mb-3">
+                  <strong>Resolution:</strong> {{ rep.action_taken }}
+                </div>
+              {% endif %}
+
+              {% if rep.status == 'open' %}
+                <div class="mt-auto pt-3 border-top d-flex gap-2">
+                  <form method="POST" action="{{ url_for('admin.resolve_report', report_id=rep.id) }}" class="flex-grow-1">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="resolution" value="action_taken"/>
+                    <input type="hidden" name="action_note" value="Resolved: Corrective moderation action executed."/>
+                    <button type="submit" class="btn btn-success btn-sm w-100" onclick="return confirm('Mark report as resolved with action taken?');">
+                      <i class="bi bi-check-circle me-1"></i>Resolve (Action Taken)
+                    </button>
+                  </form>
+                  <form method="POST" action="{{ url_for('admin.resolve_report', report_id=rep.id) }}" class="flex-grow-1">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="resolution" value="dismissed"/>
+                    <input type="hidden" name="action_note" value="Reviewed and dismissed by administrator."/>
+                    <button type="submit" class="btn btn-outline-secondary btn-sm w-100" onclick="return confirm('Dismiss this report?');">
+                      <i class="bi bi-x-circle me-1"></i>Dismiss
+                    </button>
+                  </form>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center py-5 card border-0 p-4 bg-white">
+        <i class="bi bi-shield-check fs-1 text-success"></i>
+        <h5 class="mt-2 fw-semibold">No reports matching this filter</h5>
+        <p class="text-muted small">The moderation queue is clear.</p>
+      </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}

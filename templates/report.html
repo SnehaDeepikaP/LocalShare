@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Report {{ target_type | capitalize }} — LocalShare{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container max-w-600 mx-auto">
+    <div class="card border-0 shadow-sm p-4 bg-white">
+      <div class="text-center mb-3">
+        <i class="bi bi-shield-exclamation text-danger fs-1"></i>
+        <h3 class="fw-bold mt-2 mb-1">Submit Community Report</h3>
+        <p class="text-muted small">Help us maintain a safe, welcoming mutual aid environment</p>
+      </div>
+
+      <div class="alert alert-light border small mb-4">
+        {% if target_type == 'post' %}
+          <strong>Reporting Post:</strong> {{ target.title }} (by {{ target.user_name }})
+        {% else %}
+          <strong>Reporting User:</strong> {{ target.name }} ({{ target.email }})
+        {% endif %}
+      </div>
+
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="reportReason">Reason for Report</label>
+          <select name="reason" id="reportReason" class="form-select" required>
+            <option value="">-- Choose a category --</option>
+            {% for r in reasons %}
+              <option value="{{ r }}">{{ r | capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-semibold" for="reportDetails">Explanation / Evidence</label>
+          <textarea name="details" id="reportDetails" class="form-control" rows="4"
+                    placeholder="Provide specific details so our moderation team can review appropriately..."
+                    required minlength="10"></textarea>
+          <div class="form-text small">Explain why this content violates community guidelines.</div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-danger w-100 py-2 fw-semibold shadow-sm">
+            <i class="bi bi-flag me-1"></i>Submit Report
+          </button>
+          <a href="{{ request.referrer or url_for('main.home') }}" class="btn btn-outline-secondary w-50 py-2">
+            Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

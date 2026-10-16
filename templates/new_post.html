@@ -1,85 +1,86 @@
 {% extends "base.html" %}
-{% block title %}Create Post – LocalShare{% endblock %}
+{% block title %}Create Post — LocalShare{% endblock %}
 
 {% block content %}
 <section class="py-5">
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-md-7 col-lg-6">
-        <div class="card border-0 shadow-sm">
-          <div class="card-body p-4">
-            <h3 class="fw-bold mb-1">Create a Post</h3>
-            <p class="text-muted small mb-4">Share what you need or what you can offer.</p>
+        <div class="card border-0 shadow-sm p-4 bg-white">
+          <h3 class="fw-bold mb-1">Create a Post</h3>
+          <p class="text-muted small mb-4">Share what you need or what you are offering to neighbours.</p>
 
-            <form id="postForm" method="POST" action="{{ url_for('new_post') }}" novalidate>
+          <form id="postForm" method="POST" action="{{ url_for('posts.new_post') }}" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
-              <!-- Post Type -->
-              <div class="mb-3">
-                <label class="form-label fw-semibold">Post Type</label>
-                <div class="d-flex gap-4">
-                  <div class="form-check">
-                    <input class="form-check-input" type="radio" name="post_type"
-                           id="typeRequest" value="request" checked/>
-                    <label class="form-check-label" for="typeRequest">
-                      <i class="bi bi-hand-index-fill text-danger me-1"></i>Request Help
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="radio" name="post_type"
-                           id="typeOffer" value="offer"/>
-                    <label class="form-check-label" for="typeOffer">
-                      <i class="bi bi-gift-fill text-success me-1"></i>Offer Help
-                    </label>
-                  </div>
+            <!-- Post Type -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Post Type</label>
+              <div class="d-flex gap-4">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="post_type"
+                         id="typeRequest" value="request" {{ 'checked' if post_type != 'offer' else '' }}/>
+                  <label class="form-check-label fw-medium" for="typeRequest">
+                    <i class="bi bi-hand-index-fill text-danger me-1"></i>Request Help
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="post_type"
+                         id="typeOffer" value="offer" {{ 'checked' if post_type == 'offer' else '' }}/>
+                  <label class="form-check-label fw-medium" for="typeOffer">
+                    <i class="bi bi-gift-fill text-success me-1"></i>Offer Help
+                  </label>
                 </div>
               </div>
+            </div>
 
-              <!-- Category -->
-              <div class="mb-3">
-                <label class="form-label fw-semibold">Category</label>
-                <select name="category" id="category" class="form-select" required>
-                  <option value="">-- Select a category --</option>
-                  <option value="Food">🍱 Food</option>
-                  <option value="Clothes">👕 Clothes</option>
-                  <option value="Books">📚 Books</option>
-                  <option value="Services">🔧 Services</option>
-                  <option value="Other">📦 Other</option>
-                </select>
-                <div class="invalid-feedback">Please select a category.</div>
-              </div>
+            <!-- Category -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="category">Category</label>
+              <select name="category" id="category" class="form-select" required>
+                <option value="">-- Select a category --</option>
+                <option value="Food" {{ 'selected' if category == 'Food' }}>🍱 Food</option>
+                <option value="Clothes" {{ 'selected' if category == 'Clothes' }}>👕 Clothes</option>
+                <option value="Books" {{ 'selected' if category == 'Books' }}>📚 Books</option>
+                <option value="Services" {{ 'selected' if category == 'Services' }}>🔧 Services</option>
+                <option value="Other" {{ 'selected' if category == 'Other' }}>📦 Other</option>
+              </select>
+              <div class="invalid-feedback">Please select a category.</div>
+            </div>
 
-              <!-- Title -->
-              <div class="mb-3">
-                <label class="form-label fw-semibold">Title</label>
-                <input type="text" name="title" id="postTitle" class="form-control"
-                       placeholder="Short descriptive title" required maxlength="200"/>
-                <div class="invalid-feedback">Title is required.</div>
-                <small class="text-muted"><span id="titleCount">0</span>/200</small>
-              </div>
+            <!-- Title -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="postTitle">Title</label>
+              <input type="text" name="title" id="postTitle" class="form-control"
+                     value="{{ title or '' }}" placeholder="Short descriptive title (e.g. CBSE Class 10 Science Books)"
+                     required minlength="4" maxlength="200"/>
+              <div class="invalid-feedback">Title must be between 4 and 200 characters.</div>
+              <small class="text-muted d-block text-end mt-1"><span id="titleCount">{{ (title or '') | length }}</span>/200</small>
+            </div>
 
-              <!-- Description -->
-              <div class="mb-3">
-                <label class="form-label fw-semibold">Description</label>
-                <textarea name="description" id="postDesc" class="form-control" rows="4"
-                          placeholder="Describe what you need or what you are offering..."
-                          required></textarea>
-                <div class="invalid-feedback">Description is required.</div>
-              </div>
+            <!-- Description -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="postDesc">Description</label>
+              <textarea name="description" id="postDesc" class="form-control" rows="4"
+                        placeholder="Describe what you need or what you are offering (condition, timing, etc.)..."
+                        required minlength="10">{{ description or '' }}</textarea>
+              <div class="invalid-feedback">Description must be at least 10 characters.</div>
+            </div>
 
-              <!-- Location -->
-              <div class="mb-4">
-                <label class="form-label fw-semibold">Location / Area</label>
-                <input type="text" name="location" id="postLocation" class="form-control"
-                       value="{{ session.get('location', '') }}"
-                       placeholder="e.g. Hyderabad" required/>
-                <div class="invalid-feedback">Location is required.</div>
-              </div>
+            <!-- Location -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold" for="postLocation">Location / Area</label>
+              <input type="text" name="location" id="postLocation" class="form-control"
+                     value="{{ location or session.get('location', '') }}"
+                     placeholder="e.g. Hyderabad, Madhapur" required maxlength="120"/>
+              <div class="invalid-feedback">Location is required.</div>
+              <div class="form-text small">Use a general neighbourhood or landmark, not your private street address.</div>
+            </div>
 
-              <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
-                <i class="bi bi-send me-1"></i>Publish Post
-              </button>
-            </form>
-          </div>
+            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm">
+              <i class="bi bi-send me-1"></i>Publish Post
+            </button>
+          </form>
         </div>
       </div>
     </div>

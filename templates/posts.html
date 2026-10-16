@@ -1,100 +1,203 @@
 {% extends "base.html" %}
-{% block title %}Browse Posts – LocalShare{% endblock %}
+{% block title %}Browse Community Posts — LocalShare{% endblock %}
 
 {% block content %}
 <section class="py-5">
   <div class="container">
 
-    <h2 class="fw-bold mb-4">Browse Community Posts</h2>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+      <div>
+        <h2 class="fw-bold mb-1">Browse Community Resources</h2>
+        <p class="text-muted small mb-0">Discover offers and requests across your neighbourhood</p>
+      </div>
+      {% if session.get('user_id') %}
+        <a href="{{ url_for('posts.new_post') }}" class="btn btn-accent btn-sm shadow-sm">
+          <i class="bi bi-plus-circle me-1"></i>Create New Post
+        </a>
+      {% endif %}
+    </div>
 
-    <!-- Filters -->
-    <div class="card border-0 shadow-sm mb-4 p-3">
-      <form method="GET" action="{{ url_for('posts') }}">
+    <!-- Search & Filter Card -->
+    <div class="card border-0 shadow-sm mb-4 p-3 bg-white">
+      <form method="GET" action="{{ url_for('posts.posts') }}">
         <div class="row g-2 align-items-end">
-          <div class="col-sm-4">
-            <label class="form-label small fw-semibold mb-1">Type</label>
-            <select name="type" class="form-select form-select-sm">
+          <!-- Keyword Search -->
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold mb-1" for="filterSearch">Keyword</label>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+              <input type="text" id="filterSearch" name="q" class="form-control"
+                     placeholder="e.g. maths, rice, winter coat" value="{{ query_text }}"/>
+            </div>
+          </div>
+
+          <!-- Type -->
+          <div class="col-6 col-md-2">
+            <label class="form-label small fw-semibold mb-1" for="filterType">Type</label>
+            <select id="filterType" name="type" class="form-select form-select-sm">
               <option value="">All Types</option>
               <option value="request" {{ 'selected' if selected_type == 'request' }}>Request</option>
               <option value="offer"   {{ 'selected' if selected_type == 'offer'   }}>Offer</option>
             </select>
           </div>
-          <div class="col-sm-4">
-            <label class="form-label small fw-semibold mb-1">Category</label>
-            <select name="category" class="form-select form-select-sm">
+
+          <!-- Category -->
+          <div class="col-6 col-md-2">
+            <label class="form-label small fw-semibold mb-1" for="filterCat">Category</label>
+            <select id="filterCat" name="category" class="form-select form-select-sm">
               <option value="">All Categories</option>
-              <option value="Food"     {{ 'selected' if selected_category == 'Food'     }}>Food</option>
-              <option value="Clothes"  {{ 'selected' if selected_category == 'Clothes'  }}>Clothes</option>
-              <option value="Books"    {{ 'selected' if selected_category == 'Books'     }}>Books</option>
-              <option value="Services" {{ 'selected' if selected_category == 'Services'  }}>Services</option>
-              <option value="Other"    {{ 'selected' if selected_category == 'Other'    }}>Other</option>
+              {% for cat in categories %}
+                <option value="{{ cat }}" {{ 'selected' if selected_category == cat }}>{{ cat }}</option>
+              {% endfor %}
             </select>
           </div>
-          <div class="col-sm-4">
-            <label class="form-label small fw-semibold mb-1">Location</label>
-            <input type="text" name="location" class="form-control form-control-sm"
+
+          <!-- Location -->
+          <div class="col-6 col-md-2">
+            <label class="form-label small fw-semibold mb-1" for="filterLoc">Location</label>
+            <input type="text" id="filterLoc" name="location" class="form-control form-control-sm"
                    placeholder="e.g. Hyderabad" value="{{ location_filter }}"/>
           </div>
-          <div class="col-12 d-flex gap-2 mt-2">
-            <button type="submit" class="btn btn-primary btn-sm px-4">
-              <i class="bi bi-funnel me-1"></i>Filter
+
+          <!-- Sort -->
+          <div class="col-6 col-md-2">
+            <label class="form-label small fw-semibold mb-1" for="filterSort">Sort By</label>
+            <select id="filterSort" name="sort" class="form-select form-select-sm">
+              <option value="newest" {{ 'selected' if sort_by == 'newest' }}>Newest First</option>
+              <option value="oldest" {{ 'selected' if sort_by == 'oldest' }}>Oldest First</option>
+              <option value="title"  {{ 'selected' if sort_by == 'title'  }}>Title (A-Z)</option>
+            </select>
+          </div>
+
+          <!-- Buttons -->
+          <div class="col-md-1 d-flex gap-1">
+            <button type="submit" class="btn btn-primary btn-sm w-100" title="Apply Filters">
+              <i class="bi bi-funnel"></i>
             </button>
-            <a href="{{ url_for('posts') }}" class="btn btn-outline-secondary btn-sm px-3">
-              <i class="bi bi-x-circle me-1"></i>Clear
+            <a href="{{ url_for('posts.posts') }}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+              <i class="bi bi-x-circle"></i>
             </a>
           </div>
         </div>
       </form>
     </div>
 
-    <!-- Result count -->
-    <p class="text-muted small mb-3">
-      Showing <strong>{{ posts | length }}</strong> post{{ 's' if posts | length != 1 else '' }}
-    </p>
+    <!-- Active Filter Summary & Result Count -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <p class="text-muted small mb-0">
+        Showing <strong>{{ posts | length }}</strong> of <strong>{{ pagination.total }}</strong> post{{ 's' if pagination.total != 1 else '' }}
+      </p>
+      {% if query_text or selected_type or selected_category or location_filter %}
+        <div class="small">
+          <span class="text-muted">Active filters:</span>
+          {% if selected_type %}<span class="badge bg-light text-dark border">{{ selected_type | capitalize }}</span>{% endif %}
+          {% if selected_category %}<span class="badge bg-light text-dark border">{{ selected_category }}</span>{% endif %}
+          {% if location_filter %}<span class="badge bg-light text-dark border">Location: {{ location_filter }}</span>{% endif %}
+          {% if query_text %}<span class="badge bg-light text-dark border">Query: {{ query_text }}</span>{% endif %}
+          <a href="{{ url_for('posts.posts') }}" class="text-danger ms-1 text-decoration-none small">&times; Reset</a>
+        </div>
+      {% endif %}
+    </div>
 
-    <!-- Post Cards -->
+    <!-- Posts Grid -->
     {% if posts %}
       <div class="row g-4">
         {% for post in posts %}
           <div class="col-md-6 col-lg-4">
-            <div class="card post-card border-0 shadow-sm h-100">
+            <div class="card post-card border-0 shadow-sm h-100 d-flex flex-column">
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-2">
-                  <span class="badge {{ 'badge-offer' if post['post_type'] == 'offer' else 'badge-request' }}">
-                    {{ post['post_type'] | capitalize }}
+                  <span class="badge {{ 'badge-offer' if post.post_type == 'offer' else 'badge-request' }}">
+                    <i class="bi {{ 'bi-gift-fill' if post.post_type == 'offer' else 'bi-hand-index-fill' }} me-1"></i>
+                    {{ post.post_type | capitalize }}
                   </span>
-                  <span class="badge bg-light text-dark border">{{ post['category'] }}</span>
+                  <div>
+                    <span class="badge bg-light text-dark border me-1">{{ post.category }}</span>
+                    {% if post.status == 'open' %}
+                      <span class="badge bg-success-subtle text-success border border-success-subtle">Open</span>
+                    {% elif post.status == 'in_progress' %}
+                      <span class="badge bg-warning-subtle text-warning border border-warning-subtle">In Progress</span>
+                    {% elif post.status == 'completed' %}
+                      <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Completed</span>
+                    {% else %}
+                      <span class="badge bg-secondary-subtle text-secondary border">Closed</span>
+                    {% endif %}
+                  </div>
                 </div>
-                <h6 class="card-title fw-bold">{{ post['title'] }}</h6>
+
+                <h5 class="card-title fw-bold mb-2">
+                  <a href="{{ url_for('posts.post_detail', post_id=post.id) }}" class="text-decoration-none text-dark">
+                    {{ post.title }}
+                  </a>
+                </h5>
                 <p class="card-text small text-muted">
-                  {{ post['description'][:120] }}{% if post['description'] | length > 120 %}...{% endif %}
+                  {{ post.description[:120] }}{% if post.description | length > 120 %}...{% endif %}
                 </p>
               </div>
-              <div class="card-footer bg-transparent border-0 pb-3 px-3">
-                <div class="d-flex justify-content-between small text-muted">
-                  <span><i class="bi bi-geo-alt me-1"></i>{{ post['location'] }}</span>
-                  <span><i class="bi bi-person me-1"></i>{{ post['user_name'] }}</span>
+
+              <div class="card-footer bg-transparent border-0 pt-0 pb-3 px-3 mt-auto">
+                <div class="d-flex justify-content-between small text-muted mb-2">
+                  <span><i class="bi bi-geo-alt text-primary me-1"></i>{{ post.location }}</span>
+                  <span><i class="bi bi-person me-1"></i>{{ post.user_name }}</span>
                 </div>
-                <div class="small text-muted mt-1">
-                  <i class="bi bi-clock me-1"></i>{{ post['created_at'][:10] }}
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="small text-muted">
+                    <i class="bi bi-clock me-1"></i>{{ post.created_at.strftime('%b %d, %Y') if post.created_at else '' }}
+                  </span>
+                  <div class="d-flex gap-1">
+                    <a href="{{ url_for('posts.post_detail', post_id=post.id) }}" class="btn btn-outline-primary btn-sm">
+                      Details
+                    </a>
+                    {% if session.get('user_id') == post.user_id or session.get('role') == 'admin' %}
+                      <a href="{{ url_for('posts.edit_post', post_id=post.id) }}" class="btn btn-outline-secondary btn-sm" title="Edit Post">
+                        <i class="bi bi-pencil"></i>
+                      </a>
+                    {% endif %}
+                  </div>
                 </div>
-                {% if session.get('user_id') == post['user_id'] %}
-                  <a href="{{ url_for('close_post', post_id=post['id']) }}"
-                     class="btn btn-outline-danger btn-sm mt-2 close-btn"
-                     data-title="{{ post['title'] }}">
-                    <i class="bi bi-x-circle me-1"></i>Mark Closed
-                  </a>
-                {% endif %}
               </div>
             </div>
           </div>
         {% endfor %}
       </div>
+
+      <!-- Pagination -->
+      {% if pagination.pages > 1 %}
+        <nav class="mt-5" aria-label="Posts pagination">
+          <ul class="pagination justify-content-center">
+            <li class="page-item {{ 'disabled' if not pagination.has_prev else '' }}">
+              <a class="page-link" href="{{ url_for('posts.posts', page=pagination.prev_num, type=selected_type, category=selected_category, location=location_filter, q=query_text, sort=sort_by) }}" aria-label="Previous">
+                &laquo; Prev
+              </a>
+            </li>
+            {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+              {% if p %}
+                <li class="page-item {{ 'active' if p == pagination.page else '' }}">
+                  <a class="page-link" href="{{ url_for('posts.posts', page=p, type=selected_type, category=selected_category, location=location_filter, q=query_text, sort=sort_by) }}">
+                    {{ p }}
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+              {% endif %}
+            {% endfor %}
+            <li class="page-item {{ 'disabled' if not pagination.has_next else '' }}">
+              <a class="page-link" href="{{ url_for('posts.posts', page=pagination.next_num, type=selected_type, category=selected_category, location=location_filter, q=query_text, sort=sort_by) }}" aria-label="Next">
+                Next &raquo;
+              </a>
+            </li>
+          </ul>
+        </nav>
+      {% endif %}
+
     {% else %}
-      <div class="text-center py-5 text-muted">
-        <i class="bi bi-inbox fs-1"></i>
-        <p class="mt-2">No posts found with the selected filters.</p>
-        <a href="{{ url_for('posts') }}" class="btn btn-outline-primary btn-sm">Clear Filters</a>
+      <div class="text-center py-5 card border-0 p-4">
+        <i class="bi bi-inbox fs-1 text-muted"></i>
+        <h5 class="mt-2 fw-semibold">No posts found</h5>
+        <p class="text-muted small">Try broadening your search or resetting active filters.</p>
+        <div>
+          <a href="{{ url_for('posts.posts') }}" class="btn btn-outline-primary btn-sm">Clear All Filters</a>
+        </div>
       </div>
     {% endif %}
 

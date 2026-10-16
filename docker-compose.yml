@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: localshare_app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_CONFIG=production
+      - SECRET_KEY=${SECRET_KEY:-generate-a-secure-production-secret-key-32-bytes}
+      - DATABASE_URL=sqlite:////app/data/localshare.db
+      - HOST=0.0.0.0
+      - PORT=5000
+    volumes:
+      - localshare_data:/app/data
+
+volumes:
+  localshare_data:
+    driver: local

@@ -1,40 +1,45 @@
 {% extends "base.html" %}
-{% block title %}Post Published – LocalShare{% endblock %}
+{% block title %}Post Published — LocalShare{% endblock %}
 
 {% block content %}
 <section class="py-5">
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-md-7 col-lg-6 text-center">
-        <div class="card border-0 shadow-sm p-4">
+        <div class="card border-0 shadow-sm p-4 bg-white">
           <div class="mb-3">
-            <i class="bi bi-check-circle-fill text-success" style="font-size:4rem;"></i>
+            <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
           </div>
-          <h2 class="fw-bold mb-2">Post Published!</h2>
-          <p class="text-muted mb-4">Your post is now live and visible to the community.</p>
+          <h2 class="fw-bold mb-2">Post Published Successfully!</h2>
+          <p class="text-muted mb-4">Your post is now live and our matching algorithm is actively scanning for matches.</p>
 
           {% if post %}
-          <div class="card bg-light border-0 text-start mb-4 p-3">
-            <div class="d-flex justify-content-between mb-2">
-              <span class="badge {{ 'badge-offer' if post['post_type'] == 'offer' else 'badge-request' }}">
-                {{ post['post_type'] | capitalize }}
-              </span>
-              <span class="badge bg-white text-dark border">{{ post['category'] }}</span>
+            <div class="card bg-light border-0 text-start mb-4 p-3">
+              <div class="d-flex justify-content-between mb-2">
+                <span class="badge {{ 'badge-offer' if post.post_type == 'offer' else 'badge-request' }}">
+                  {{ post.post_type | capitalize }}
+                </span>
+                <span class="badge bg-white text-dark border">{{ post.category }}</span>
+              </div>
+              <h5 class="fw-bold mb-1">{{ post.title }}</h5>
+              <p class="text-muted small mb-2">{{ post.description }}</p>
+              <p class="small mb-0">
+                <i class="bi bi-geo-alt me-1 text-primary"></i>{{ post.location }}
+              </p>
             </div>
-            <h5 class="fw-bold mb-1">{{ post['title'] }}</h5>
-            <p class="text-muted small mb-2">{{ post['description'] }}</p>
-            <p class="small mb-0">
-              <i class="bi bi-geo-alt me-1 text-primary"></i>{{ post['location'] }}
-            </p>
-          </div>
           {% endif %}
 
-          <div class="d-flex gap-3 justify-content-center">
-            <a href="{{ url_for('posts') }}" class="btn btn-primary px-4">
+          <div class="d-flex gap-2 justify-content-center flex-wrap">
+            {% if post %}
+              <a href="{{ url_for('posts.post_detail', post_id=post.id) }}" class="btn btn-primary px-4 shadow-sm">
+                <i class="bi bi-eye me-1"></i>View Your Post
+              </a>
+            {% endif %}
+            <a href="{{ url_for('posts.posts') }}" class="btn btn-outline-primary px-4">
               <i class="bi bi-grid me-1"></i>Browse All Posts
             </a>
-            <a href="{{ url_for('new_post') }}" class="btn btn-outline-secondary px-4">
-              <i class="bi bi-plus me-1"></i>Post Again
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary px-4">
+              <i class="bi bi-speedometer2 me-1"></i>Dashboard
             </a>
           </div>
         </div>

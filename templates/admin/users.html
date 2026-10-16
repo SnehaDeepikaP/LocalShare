@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Manage Users — Admin LocalShare{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb small mb-1">
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.index') }}">Admin</a></li>
+            <li class="breadcrumb-item active">Users</li>
+          </ol>
+        </nav>
+        <h2 class="fw-bold mb-0">User Account Management</h2>
+      </div>
+      <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Admin
+      </a>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="card border-0 shadow-sm p-3 bg-white mb-4">
+      <form method="GET" action="{{ url_for('admin.users') }}" class="row g-2 align-items-center">
+        <div class="col-md-5">
+          <input type="text" name="q" class="form-control form-control-sm"
+                 placeholder="Search by name or email..." value="{{ search }}"/>
+        </div>
+        <div class="col-md-3">
+          <select name="status" class="form-select form-select-sm">
+            <option value="">All Account Statuses</option>
+            <option value="active" {{ 'selected' if status_filter == 'active' }}>Active Only</option>
+            <option value="suspended" {{ 'selected' if status_filter == 'suspended' }}>Suspended Only</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex gap-1">
+          <button type="submit" class="btn btn-primary btn-sm px-3">Filter</button>
+          <a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+        </div>
+      </form>
+    </div>
+
+    <!-- User Table -->
+    <div class="card border-0 shadow-sm bg-white p-3">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Location</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Joined</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+              <tr>
+                <td>{{ u.id }}</td>
+                <td class="fw-semibold">{{ u.name }}</td>
+                <td>{{ u.email }}</td>
+                <td>{{ u.location }}</td>
+                <td>
+                  <span class="badge {{ 'bg-danger' if u.role == 'admin' else 'bg-secondary' }}">
+                    {{ u.role }}
+                  </span>
+                </td>
+                <td>
+                  {% if u.is_suspended %}
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Suspended</span>
+                  {% else %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                  {% endif %}
+                </td>
+                <td class="small text-muted">{{ u.created_at.strftime('%b %d, %Y') if u.created_at else '' }}</td>
+                <td class="text-end">
+                  <div class="d-flex justify-content-end gap-1">
+                    {% if u.id != session.get('user_id') %}
+                      <!-- Toggle Suspend -->
+                      <form method="POST" action="{{ url_for('admin.toggle_suspend_user', user_id=u.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-sm {{ 'btn-outline-success' if u.is_suspended else 'btn-outline-danger' }}"
+                                onclick="return confirm('Change suspension status for this user?');">
+                          {{ 'Restore' if u.is_suspended else 'Suspend' }}
+                        </button>
+                      </form>
+                      <!-- Toggle Role -->
+                      <form method="POST" action="{{ url_for('admin.toggle_role_user', user_id=u.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                onclick="return confirm('Toggle admin privilege for this user?');">
+                          {{ 'Demote' if u.role == 'admin' else 'Make Admin' }}
+                        </button>
+                      </form>
+                    {% else %}
+                      <span class="badge bg-light text-muted border">You (Current Admin)</span>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

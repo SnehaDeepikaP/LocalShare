@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Moderate Posts — Admin LocalShare{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb small mb-1">
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.index') }}">Admin</a></li>
+            <li class="breadcrumb-item active">Posts</li>
+          </ol>
+        </nav>
+        <h2 class="fw-bold mb-0">Post Moderation</h2>
+      </div>
+      <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Admin
+      </a>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="card border-0 shadow-sm p-3 bg-white mb-4">
+      <form method="GET" action="{{ url_for('admin.posts') }}" class="row g-2 align-items-center">
+        <div class="col-md-5">
+          <input type="text" name="q" class="form-control form-control-sm"
+                 placeholder="Search post title or description..." value="{{ search }}"/>
+        </div>
+        <div class="col-md-3">
+          <select name="status" class="form-select form-select-sm">
+            <option value="">All Statuses</option>
+            <option value="open" {{ 'selected' if status_filter == 'open' }}>Open</option>
+            <option value="in_progress" {{ 'selected' if status_filter == 'in_progress' }}>In Progress</option>
+            <option value="completed" {{ 'selected' if status_filter == 'completed' }}>Completed</option>
+            <option value="closed" {{ 'selected' if status_filter == 'closed' }}>Closed</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex gap-1">
+          <button type="submit" class="btn btn-primary btn-sm px-3">Filter</button>
+          <a href="{{ url_for('admin.posts') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Posts Table -->
+    <div class="card border-0 shadow-sm bg-white p-3">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Author</th>
+              <th>Type</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th class="text-end">Moderation</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in posts %}
+              <tr>
+                <td>{{ p.id }}</td>
+                <td class="fw-semibold">
+                  <a href="{{ url_for('posts.post_detail', post_id=p.id) }}" class="text-dark text-decoration-none">
+                    {{ p.title }}
+                  </a>
+                </td>
+                <td>{{ p.user_name }}</td>
+                <td>
+                  <span class="badge {{ 'badge-offer' if p.post_type == 'offer' else 'badge-request' }}">
+                    {{ p.post_type | capitalize }}
+                  </span>
+                </td>
+                <td><span class="badge bg-light text-dark border">{{ p.category }}</span></td>
+                <td>
+                  {% if p.status == 'open' %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">Open</span>
+                  {% elif p.status == 'in_progress' %}
+                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle">In Progress</span>
+                  {% elif p.status == 'completed' %}
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Completed</span>
+                  {% else %}
+                    <span class="badge bg-secondary-subtle text-secondary border">Closed</span>
+                  {% endif %}
+                </td>
+                <td class="small text-muted">{{ p.created_at.strftime('%b %d, %Y') if p.created_at else '' }}</td>
+                <td class="text-end">
+                  <div class="d-flex justify-content-end gap-1">
+                    <a href="{{ url_for('posts.post_detail', post_id=p.id) }}" class="btn btn-sm btn-outline-primary" title="View">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                    {% if p.status == 'open' %}
+                      <form method="POST" action="{{ url_for('admin.moderate_post', post_id=p.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <input type="hidden" name="action" value="close"/>
+                        <button type="submit" class="btn btn-sm btn-outline-warning" title="Close Post">
+                          <i class="bi bi-lock"></i>
+                        </button>
+                      </form>
+                    {% else %}
+                      <form method="POST" action="{{ url_for('admin.moderate_post', post_id=p.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <input type="hidden" name="action" value="reopen"/>
+                        <button type="submit" class="btn btn-sm btn-outline-success" title="Reopen Post">
+                          <i class="bi bi-unlock"></i>
+                        </button>
+                      </form>
+                    {% endif %}
+                    <form method="POST" action="{{ url_for('admin.moderate_post', post_id=p.id) }}" class="d-inline">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                      <input type="hidden" name="action" value="delete"/>
+                      <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove Post"
+                              onclick="return confirm('Permanently remove this post?');">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

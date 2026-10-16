@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Matches for "{{ target_post.title }}" — LocalShare{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb small mb-1">
+            <li class="breadcrumb-item"><a href="{{ url_for('posts.post_detail', post_id=target_post.id) }}">{{ target_post.title[:30] }}...</a></li>
+            <li class="breadcrumb-item active">Smart Matches</li>
+          </ol>
+        </nav>
+        <h2 class="fw-bold mb-0">Recommended Matches for "{{ target_post.title }}"</h2>
+      </div>
+      <a href="{{ url_for('posts.post_detail', post_id=target_post.id) }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Post
+      </a>
+    </div>
+
+    <!-- Target Post Reference Card -->
+    <div class="card border-0 shadow-sm p-3 bg-light mb-4">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <span class="badge {{ 'badge-offer' if target_post.post_type == 'offer' else 'badge-request' }} me-2">
+            Target: {{ target_post.post_type | capitalize }}
+          </span>
+          <span class="badge bg-white text-dark border">{{ target_post.category }}</span>
+          <span class="ms-2 small text-muted"><i class="bi bi-geo-alt me-1"></i>{{ target_post.location }}</span>
+        </div>
+        <span class="small text-muted">Author: {{ target_post.user_name }}</span>
+      </div>
+    </div>
+
+    {% if matches %}
+      <div class="row g-4">
+        {% for m in matches %}
+          <div class="col-md-6">
+            <div class="card border-0 shadow-sm p-4 bg-white h-100 d-flex flex-column">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge {{ 'badge-offer' if m.post.post_type == 'offer' else 'badge-request' }} fs-6">
+                  {{ m.post.post_type | capitalize }}
+                </span>
+                <span class="badge bg-primary text-white fs-6">
+                  {{ m.score }}% Match
+                </span>
+              </div>
+
+              <h4 class="fw-bold mb-2">
+                <a href="{{ url_for('posts.post_detail', post_id=m.post.id) }}" class="text-decoration-none text-dark">
+                  {{ m.post.title }}
+                </a>
+              </h4>
+              <p class="text-muted small mb-3">{{ m.post.description }}</p>
+
+              <div class="card bg-light border-0 p-3 mb-3 small">
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-check2-circle text-success me-1"></i>Match Factor Breakdown</h6>
+                {% for f in m.factors %}
+                  <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                      <span class="fw-semibold text-secondary">{{ f.factor }}</span>
+                      <span class="fw-bold {% if f.score > 0 %}text-success{% else %}text-muted{% endif %}">
+                        {{ f.score }} / {{ f.max_score }}
+                      </span>
+                    </div>
+                    <div class="text-muted" style="font-size: 0.8rem;">{{ f.reason }}</div>
+                  </div>
+                {% endfor %}
+              </div>
+
+              <div class="mt-auto d-flex justify-content-between align-items-center pt-2">
+                <span class="small text-muted"><i class="bi bi-geo-alt me-1 text-primary"></i>{{ m.post.location }}</span>
+                <a href="{{ url_for('posts.post_detail', post_id=m.post.id) }}" class="btn btn-primary btn-sm px-3">
+                  View &amp; Request Exchange &rarr;
+                </a>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center py-5 card border-0 p-4 bg-white">
+        <i class="bi bi-search fs-1 text-muted"></i>
+        <h5 class="mt-2 fw-semibold">No complementary matches available right now</h5>
+        <p class="text-muted small">We check for opposing post types, matching categories, and nearby locations.</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

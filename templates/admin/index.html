@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — LocalShare{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div>
+        <span class="badge bg-danger text-uppercase px-2 py-1 mb-1">Administrative Portal</span>
+        <h2 class="fw-bold mb-0">Platform Overview &amp; Moderation</h2>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-people me-1"></i>Users
+        </a>
+        <a href="{{ url_for('admin.posts') }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-card-checklist me-1"></i>Posts
+        </a>
+        <a href="{{ url_for('admin.reports') }}" class="btn btn-outline-danger btn-sm">
+          <i class="bi bi-flag me-1"></i>Reports ({{ stats['open_reports'] }})
+        </a>
+        <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-outline-dark btn-sm">
+          <i class="bi bi-journal-text me-1"></i>Audit Logs
+        </a>
+      </div>
+    </div>
+
+    <!-- Stats Matrix -->
+    <div class="row g-3 mb-5">
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 text-center bg-white">
+          <div class="h2 fw-bold text-primary mb-0">{{ stats['total_users'] }}</div>
+          <div class="small text-muted fw-semibold">Total Users</div>
+          <div class="text-danger small mt-1">{{ stats['suspended_users'] }} suspended</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 text-center bg-white">
+          <div class="h2 fw-bold text-info mb-0">{{ stats['total_posts'] }}</div>
+          <div class="small text-muted fw-semibold">Total Posts</div>
+          <div class="text-success small mt-1">{{ stats['active_posts_count'] }} active open</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 text-center bg-white">
+          <div class="h2 fw-bold text-success mb-0">{{ stats['completed_exchanges_count'] }}</div>
+          <div class="small text-muted fw-semibold">Completed Exchanges</div>
+          <div class="text-warning small mt-1">{{ stats['pending_requests_count'] }} in coordination</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 text-center bg-white">
+          <div class="h2 fw-bold text-danger mb-0">{{ stats['open_reports'] }}</div>
+          <div class="small text-muted fw-semibold">Open Reports</div>
+          <div class="text-muted small mt-1">{{ stats['total_reports'] }} total filed</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <!-- Urgent Moderation Reports -->
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm p-4 bg-white h-100">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0 text-danger"><i class="bi bi-flag-fill me-2"></i>Recent Community Reports</h5>
+            <a href="{{ url_for('admin.reports') }}" class="small text-decoration-none">View All</a>
+          </div>
+
+          {% if recent_reports %}
+            <div class="list-group list-group-flush">
+              {% for rep in recent_reports %}
+                <div class="list-group-item px-0 py-2 border-bottom">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="badge {% if rep.status == 'open' %}bg-danger{% else %}bg-secondary{% endif %}">
+                      {{ rep.status | capitalize }}
+                    </span>
+                    <span class="small text-muted">{{ rep.created_at.strftime('%b %d, %H:%M') if rep.created_at else '' }}</span>
+                  </div>
+                  <div class="fw-semibold small text-dark">
+                    Reason: <span class="text-danger">{{ rep.reason | capitalize }}</span>
+                    {% if rep.post %}
+                      &middot; Post: <a href="{{ url_for('posts.post_detail', post_id=rep.post.id) }}">{{ rep.post.title[:30] }}</a>
+                    {% endif %}
+                  </div>
+                  <div class="text-muted small text-truncate">{{ rep.details }}</div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-4 text-muted small">
+              <i class="bi bi-check-circle fs-3 text-success d-block mb-1"></i>
+              No reports currently in queue.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Recent Audit Log Entries -->
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm p-4 bg-white h-100">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-shield-shaded text-primary me-2"></i>Recent Audit History</h5>
+            <a href="{{ url_for('admin.audit_logs') }}" class="small text-decoration-none">Full Log</a>
+          </div>
+
+          {% if recent_audits %}
+            <div class="list-group list-group-flush">
+              {% for a in recent_audits %}
+                <div class="list-group-item px-0 py-2 border-bottom small">
+                  <div class="d-flex justify-content-between">
+                    <span class="badge bg-light text-dark border">{{ a.action }}</span>
+                    <span class="text-muted">{{ a.created_at.strftime('%b %d, %H:%M') if a.created_at else '' }}</span>
+                  </div>
+                  <div class="text-secondary mt-1">{{ a.details }}</div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-4 text-muted small">
+              No audit entries recorded yet.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

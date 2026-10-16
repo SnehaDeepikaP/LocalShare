@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Community Guidelines &amp; Safety — LocalShare{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container max-w-900 mx-auto">
+
+    <div class="text-center mb-5">
+      <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill mb-2">
+        <i class="bi bi-shield-check me-1"></i> Trust &amp; Safety Policy
+      </span>
+      <h1 class="fw-bold mb-2">LocalShare Community Guidelines</h1>
+      <p class="text-muted">Standards for a safe, respectful, and supportive mutual aid community</p>
+    </div>
+
+    <div class="card border-0 shadow-sm p-4 p-md-5 bg-white mb-4">
+      <h4 class="fw-bold text-dark mb-3"><i class="bi bi-heart-fill text-danger me-2"></i>Core Principles</h4>
+      <p class="text-secondary">
+        LocalShare exists to foster neighbourly solidarity, reduce waste, and provide mutual aid. By participating in LocalShare, every member agrees to the following core tenets:
+      </p>
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <div class="p-3 bg-light rounded h-100">
+            <h6 class="fw-bold text-dark"><i class="bi bi-cash-stack text-success me-1"></i>100% Free Sharing</h6>
+            <p class="small text-muted mb-0">No money, fees, barter credits, or commercial promotions may be requested. All items and services are shared unconditionally as gifts or mutual help.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="p-3 bg-light rounded h-100">
+            <h6 class="fw-bold text-dark"><i class="bi bi-person-heart text-primary me-1"></i>Kindness &amp; Respect</h6>
+            <p class="small text-muted mb-0">Treat every community member with dignity, regardless of background. Harassment, discrimination, and derogatory language will result in permanent suspension.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="p-3 bg-light rounded h-100">
+            <h6 class="fw-bold text-dark"><i class="bi bi-shield-shaded text-warning me-1"></i>Privacy &amp; Safety</h6>
+            <p class="small text-muted mb-0">Never post private home addresses, phone numbers, or financial details in public post descriptions. Use the coordinated private exchange mechanism.</p>
+          </div>
+        </div>
+      </div>
+
+      <hr class="my-4"/>
+
+      <h4 class="fw-bold text-dark mb-3"><i class="bi bi-bag-check-fill text-success me-2"></i>Permitted vs. Prohibited Resources</h4>
+      
+      <div class="row g-4 mb-4">
+        <div class="col-md-6">
+          <div class="card border-success border-opacity-25 bg-success-subtle bg-opacity-10 p-3 h-100">
+            <h6 class="fw-bold text-success mb-2"><i class="bi bi-check-circle-fill me-1"></i>Permitted Resources</h6>
+            <ul class="small text-secondary mb-0 ps-3">
+              <li>Books, textbooks, study guides, and school stationery.</li>
+              <li>Clean, wearable clothing, shoes, and outgrown kids' apparel.</li>
+              <li>Packaged, unexpired pantry goods and fresh home-cooked meals (with clear dietary/allergen disclosure).</li>
+              <li>Small household appliances, kitchenware, furniture, and tools in safe working order.</li>
+              <li>Volunteer assistance: tutoring, tech advice, gardening help, senior assistance.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card border-danger border-opacity-25 bg-danger-subtle bg-opacity-10 p-3 h-100">
+            <h6 class="fw-bold text-danger mb-2"><i class="bi bi-x-circle-fill me-1"></i>Strictly Prohibited</h6>
+            <ul class="small text-secondary mb-0 ps-3">
+              <li>Prescription medications, controlled substances, and medical equipment.</li>
+              <li>Weapons, explosives, hazardous chemicals, or fireworks.</li>
+              <li>Expired food, recalled products, or broken/unsafe electricals.</li>
+              <li>Commercial advertisements, MLM schemes, sales, or loan offers.</li>
+              <li>Adult products, stolen goods, or counterfeit merchandise.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <hr class="my-4"/>
+
+      <h4 class="fw-bold text-dark mb-3"><i class="bi bi-geo-alt-fill text-primary me-2"></i>Safe Coordination Best Practices</h4>
+      <div class="p-3 bg-light rounded mb-4">
+        <ul class="small text-secondary mb-0 ps-3">
+          <li class="mb-2"><strong>Public Meeting Spots:</strong> For handovers, prefer well-lit, public community locations such as community libraries, local cafes, transit stations, or outside school gates during daytime.</li>
+          <li class="mb-2"><strong>Inspect Items:</strong> Verify the condition of goods upon collection. Do not accept anything that appears damaged, spoiled, or unsafe.</li>
+          <li class="mb-0"><strong>Notify if Plans Change:</strong> If you cannot make a scheduled meetup, inform the other person promptly through the platform request note.</li>
+        </ul>
+      </div>
+
+      <hr class="my-4"/>
+
+      <h4 class="fw-bold text-dark mb-3"><i class="bi bi-flag-fill text-warning me-2"></i>Reporting &amp; Moderation</h4>
+      <p class="small text-secondary mb-3">
+        Any user can report suspicious listings or unacceptable behavior by clicking the "Report Post" or "Report User" link.
+        Our moderation team reviews all reports in the administrative queue and reserves the right to remove content or suspend offending accounts immediately.
+      </p>
+      <div class="d-flex gap-2">
+        <a href="{{ url_for('posts.posts') }}" class="btn btn-primary btn-sm">
+          <i class="bi bi-grid me-1"></i>Browse Community Listings
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

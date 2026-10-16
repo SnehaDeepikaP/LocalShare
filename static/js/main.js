@@ -1,41 +1,60 @@
+/**
+ * LocalShare Client-Side Enhancements & Validation
+ */
 $(document).ready(function () {
 
   /* ── Register Form Validation ─────────────────────────────────────────── */
   $('#registerForm').on('submit', function (e) {
-    e.preventDefault();
     var valid = true;
-
-    if (!$('#name').val().trim()) {
-      $('#name').addClass('is-invalid'); valid = false;
-    } else { $('#name').removeClass('is-invalid').addClass('is-valid'); }
-
-    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test($('#email').val().trim())) {
-      $('#email').addClass('is-invalid'); valid = false;
-    } else { $('#email').removeClass('is-invalid').addClass('is-valid'); }
-
+    var name = $('#name').val().trim();
+    var email = $('#email').val().trim();
     var pwd = $('#password').val();
+    var loc = $('#location').val().trim();
+    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!name || name.length < 2) {
+      $('#name').addClass('is-invalid'); valid = false;
+    } else {
+      $('#name').removeClass('is-invalid').addClass('is-valid');
+    }
+
+    if (!email || !emailRegex.test(email)) {
+      $('#email').addClass('is-invalid'); valid = false;
+    } else {
+      $('#email').removeClass('is-invalid').addClass('is-valid');
+    }
+
     if (pwd.length < 6 || !/[A-Z]/.test(pwd) || !/[0-9]/.test(pwd)) {
       $('#password').addClass('is-invalid'); valid = false;
-    } else { $('#password').removeClass('is-invalid').addClass('is-valid'); }
+    } else {
+      $('#password').removeClass('is-invalid').addClass('is-valid');
+    }
 
-    if (!$('#location').val().trim()) {
+    if (!loc || loc.length < 2) {
       $('#location').addClass('is-invalid'); valid = false;
-    } else { $('#location').removeClass('is-invalid').addClass('is-valid'); }
+    } else {
+      $('#location').removeClass('is-invalid').addClass('is-valid');
+    }
 
-    if (valid) { this.submit(); }
+    if (!valid) {
+      e.preventDefault();
+      // Focus first invalid field
+      $('.is-invalid').first().focus();
+    }
   });
 
   /* ── Password Strength Meter ──────────────────────────────────────────── */
   $('#password').on('input', function () {
-    var val = $(this).val(), score = 0;
+    var val = $(this).val();
+    var score = 0;
     if (val.length >= 6)           score++;
     if (/[A-Z]/.test(val))         score++;
     if (/[0-9]/.test(val))         score++;
     if (/[^A-Za-z0-9]/.test(val))  score++;
 
     var colors = ['', 'bg-danger', 'bg-warning', 'bg-info', 'bg-success'];
-    var labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+    var labels = ['', 'Weak: Add capital & numbers', 'Fair', 'Good', 'Strong'];
+
     $('#strengthBar')
       .css('width', (score / 4 * 100) + '%')
       .removeClass('bg-danger bg-warning bg-info bg-success')
@@ -45,43 +64,64 @@ $(document).ready(function () {
 
   /* ── Login Form Validation ────────────────────────────────────────────── */
   $('#loginForm').on('submit', function (e) {
-    e.preventDefault();
     var valid = true;
+    var email = $('#loginEmail').val().trim();
+    var pwd = $('#loginPassword').val();
     var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!emailRegex.test($('#loginEmail').val().trim())) {
+    if (!email || !emailRegex.test(email)) {
       $('#loginEmail').addClass('is-invalid'); valid = false;
-    } else { $('#loginEmail').removeClass('is-invalid').addClass('is-valid'); }
+    } else {
+      $('#loginEmail').removeClass('is-invalid').addClass('is-valid');
+    }
 
-    if (!$('#loginPassword').val()) {
+    if (!pwd) {
       $('#loginPassword').addClass('is-invalid'); valid = false;
-    } else { $('#loginPassword').removeClass('is-invalid').addClass('is-valid'); }
+    } else {
+      $('#loginPassword').removeClass('is-invalid').addClass('is-valid');
+    }
 
-    if (valid) { this.submit(); }
+    if (!valid) {
+      e.preventDefault();
+      $('.is-invalid').first().focus();
+    }
   });
 
   /* ── New Post Form Validation ─────────────────────────────────────────── */
   $('#postForm').on('submit', function (e) {
-    e.preventDefault();
     var valid = true;
 
     if (!$('#category').val()) {
       $('#category').addClass('is-invalid'); valid = false;
-    } else { $('#category').removeClass('is-invalid').addClass('is-valid'); }
+    } else {
+      $('#category').removeClass('is-invalid').addClass('is-valid');
+    }
 
-    if (!$('#postTitle').val().trim()) {
+    var title = $('#postTitle').val().trim();
+    if (!title || title.length < 4) {
       $('#postTitle').addClass('is-invalid'); valid = false;
-    } else { $('#postTitle').removeClass('is-invalid').addClass('is-valid'); }
+    } else {
+      $('#postTitle').removeClass('is-invalid').addClass('is-valid');
+    }
 
-    if (!$('#postDesc').val().trim()) {
+    var desc = $('#postDesc').val().trim();
+    if (!desc || desc.length < 10) {
       $('#postDesc').addClass('is-invalid'); valid = false;
-    } else { $('#postDesc').removeClass('is-invalid').addClass('is-valid'); }
+    } else {
+      $('#postDesc').removeClass('is-invalid').addClass('is-valid');
+    }
 
-    if (!$('#postLocation').val().trim()) {
+    var loc = $('#postLocation').val().trim();
+    if (!loc || loc.length < 2) {
       $('#postLocation').addClass('is-invalid'); valid = false;
-    } else { $('#postLocation').removeClass('is-invalid').addClass('is-valid'); }
+    } else {
+      $('#postLocation').removeClass('is-invalid').addClass('is-valid');
+    }
 
-    if (valid) { this.submit(); }
+    if (!valid) {
+      e.preventDefault();
+      $('.is-invalid').first().focus();
+    }
   });
 
   /* ── Title Character Counter ──────────────────────────────────────────── */
@@ -89,17 +129,7 @@ $(document).ready(function () {
     $('#titleCount').text($(this).val().length);
   });
 
-  /* ── Close Post Confirmation ──────────────────────────────────────────── */
-  $('.close-btn').on('click', function (e) {
-    if (!confirm('Mark "' + $(this).data('title') + '" as closed?')) {
-      e.preventDefault();
-    }
-  });
-
-  /* ── Auto-dismiss flash alerts after 4 seconds ───────────────────────── */
-  setTimeout(function () { $('.alert').fadeOut('slow'); }, 4000);
-
-  /* ── Clear is-invalid on change ──────────────────────────────────────── */
+  /* ── Remove invalid class on user edit ────────────────────────────────── */
   $('input, select, textarea').on('input change', function () {
     $(this).removeClass('is-invalid');
   });
