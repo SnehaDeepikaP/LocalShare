@@ -19,12 +19,19 @@ class Config:
     LOGIN_RATE_LIMIT_WINDOW_SECONDS = 300  # 5 minutes
 
 
+_default_db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'localshare.db')).replace('\\', '/')
+_default_db_uri = f"sqlite:///{_default_db_path}"
+
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        'DATABASE_URL',
-        f"sqlite:///{os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'localshare.db'))}"
-    )
+    _db_env = os.environ.get('DATABASE_URL')
+    if _db_env and _db_env.startswith('sqlite:///') and not (len(_db_env) > 11 and _db_env[11] == ':'):
+        # Resolve relative SQLite URL to application root
+        _rel_path = _db_env[10:]
+        _abs_p = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', _rel_path)).replace('\\', '/')
+        SQLALCHEMY_DATABASE_URI = f"sqlite:///{_abs_p}"
+    else:
+        SQLALCHEMY_DATABASE_URI = _db_env or _default_db_uri
     SESSION_COOKIE_SECURE = False
 
 

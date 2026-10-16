@@ -6,7 +6,7 @@ load_dotenv()
 from app import create_app
 from app.migrations_helper import upgrade_existing_sqlite_database
 
-config_name = os.environ.get('FLASK_CONFIG', 'production')
+config_name = os.environ.get('FLASK_CONFIG', 'development')
 app = create_app(config_name)
 
 # Ensure database tables exist on startup
